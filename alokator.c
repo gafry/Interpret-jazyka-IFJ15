@@ -32,7 +32,7 @@ void *newMalloc(int size)
 	if (lastStruct == NULL)	{
 		lastStruct = record;
 	} else {
-		record->nextStruct = lastStruct;
+		lastStruct->nextStruct = record;
 		lastStruct = record;
 	}
 
@@ -41,8 +41,8 @@ void *newMalloc(int size)
 
 void *newRealloc(void *adr, int size)
 {
-	ptrAllocStruct record = NULL;
-	if (record == NULL) {
+	void *record = NULL;
+	if (adr == NULL) {
 		adr = newMalloc(size);
 		return adr;
 	} else {
@@ -58,7 +58,7 @@ void diffMem(void *record, int size, void *toBeDestroyed)
 {
 	seekAndDestroy(toBeDestroyed);
 
-	ptrAllocStruct newRecord = malloc(sizeof(tAllocStruct));
+	ptrAllocStruct newRecord = malloc(sizeof(struct AllocStruct));
 	if (newRecord == NULL) {
 		error = ERR_ALLOC;
 		return;
@@ -75,7 +75,7 @@ void diffMem(void *record, int size, void *toBeDestroyed)
 	if (lastStruct == NULL)	{
 		lastStruct = newRecord;
 	} else {
-		newRecord->nextStruct = lastStruct;
+		lastStruct->nextStruct = newRecord;
 		lastStruct = newRecord;
 	}
 }
