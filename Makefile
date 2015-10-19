@@ -1,6 +1,6 @@
 RM=rm
-CC=gcc
-CFLAGS=-c -Wall -std=c99 -O3 -pedantic
+CC=g++
+CFLAGS=-c -Wall -std=c++11 -O3 -pedantic
 
 
 prekladac: alokator.o lexikalni_analyzator.o main.o
