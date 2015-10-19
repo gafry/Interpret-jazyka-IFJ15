@@ -1,8 +1,3 @@
-#ifndef LEXIKALNI_ANALYZATOR_H_INCLUDED
-#define LEXIKALNI_ANALYZATOR_H_INCLUDED
-#endif
-
-
 /*
 * STAVY AUTOMATU
 */
@@ -17,7 +12,7 @@ typedef enum
 
     //CHYBOVE STAVY
     S_CHYBAVS,      //  4 CHYBA NA VSTUPU
-    S_CHYBABE,      //  5 CHYBA ZA BÌHU
+    S_CHYBABE,      //  5 CHYBA ZA BEHU
 
     // DATOVE TYPY
     S_TYPDOUBLE,    //  6
@@ -25,6 +20,7 @@ typedef enum
     S_TYPSTRING,    //  8
 
     //KLICOVA SLOVA
+    S_MAIN,			//  9 MAIN
     S_AUTO = 10,    // 10 AUTO
     S_CIN,          // 11 CIN
     S_COUT,         // 12 COUT
@@ -38,9 +34,9 @@ typedef enum
 
     //ZNAKY
     S_CARKA,        // 20 ,
-    S_KOMENT,       // 21 //
-    S_LKOM,         // 22 /*
-    S_PKOM,         // 23 */
+    S_KOMENT,       // 21 // + KOMENTAR DO KONCE RADKU
+    S_LKOM,         // 22 /* + ZACATEK BLOKU KOMENTARU
+    S_PKOM,         // 23 */ KONEC BLOKU KOMENTARU
     S_LPRIR,        // 24 <<
     S_PPRIR,        // 25 >>
     S_TECKA,        // 26 .     PRO DESETINNA CISLA
@@ -55,8 +51,8 @@ typedef enum
     S_DEXP,         // 33 DOUBLE JAKO EXPONENT
     S_DEXP1,        // 34
     S_DEXPP,        // 35 DOUBLE JAKO EXPONENT POMOCNY
-    S_HEXADECIMAL,  // 36 PRO HEXADECIMALNI CISLA
-    S_NOVYRADEK,    // 37
+    S_DPOM2,  		// 36 PRO HEXADECIMALNI CISLA
+    S_KOMENTP,      // 37 ZJISTI OBSAH RDKOVEHO KOMENTARE
 
     //MATEMATICKE OPERACE
     S_ADD = 40,     // 40 +
@@ -97,5 +93,5 @@ extern tToken token;
 * PROTOTYPY FUNKCI
 */
 
-tToken getToken(void);  // VRATI TOKEN
-
+tToken getToken();  // VRATI TOKEN
+void setFile (FILE *f);
