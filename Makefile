@@ -7,4 +7,4 @@ prekladac: alokator.o lexikalni_analyzator.o main.o
 	$(CC) alokator.o lexikalni_analyzator.o main.o -lm -o prekladac
 
 clean:
-	$(RM)   *.o prekladac
+	$(RM)   *.o

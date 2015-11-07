@@ -154,7 +154,7 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
                     vlozZnak(c,&pocitadlo);
             }
             else if (c=='='){
-                    stav = S_ROV;
+                    stav = S_PRIR;
                     vlozZnak(c,&pocitadlo);
             }
             else if (c=='>'){
