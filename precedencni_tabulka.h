@@ -26,9 +26,9 @@ typedef enum
 	PKULZAV    = 11,	// )
 	LMNOZZAV   = 12,	// {
 	PMNOZZAV   = 13,	// }
-	ID         = 24,	// konstanta nebo nazev promenne
-	FUNKCE	   = 25,	// zavolani funkce
-	DOLAR      = 26		// terminal
+	ID         = 14,	// konstanta nebo nazev promenne
+	FUNKCE	   = 15,	// zavolani funkce
+	DOLAR      = 16		// terminal
 } tTabOperace;
 
 //precedencni tabulka
