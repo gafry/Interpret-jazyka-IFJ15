@@ -52,3 +52,10 @@ const tTab precedencni_tabulka[RADKY][SLOUPCE]
 	{R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R, R},
 	{M, M, M, M, M, M, M, M, M, M, M, M, M, M, M, M, R},
 };
+
+//polozka pro vyrazy
+typedef struct
+{
+	tData data;
+	tTabOperace operace;
+} TokenResolved;
