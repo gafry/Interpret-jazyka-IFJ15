@@ -37,7 +37,7 @@ typedef enum tErrVyraz
 	ERR_OK  = 0,	//no problem
 	ERR_LEX = 1,	//lexikalni chyba
 	ERR_SYN = 2,	//syntakticka chyba
-	ERR_SEM = 3		//semanticka chyba
+	ERR_SEM = 3	//semanticka chyba
 } tErrVyr;
 
 //precedencni tabulka
