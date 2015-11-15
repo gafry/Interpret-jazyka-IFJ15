@@ -31,6 +31,15 @@ typedef enum
 	DOLAR      = 16		// terminal
 } tTabOperace;
 
+//chyby pri vyhodnocovani tokenu
+typedef enum tErrVyraz
+{
+	ERR_OK  = 0,	//no problem
+	ERR_LEX = 1,	//lexikalni chyba
+	ERR_SYN = 2,	//syntakticka chyba
+	ERR_SEM = 3		//semanticka chyba
+} tErrVyr;
+
 //precedencni tabulka
 const tTab precedencni_tabulka[RADKY][SLOUPCE]
 {
