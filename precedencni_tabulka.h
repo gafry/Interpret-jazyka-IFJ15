@@ -26,9 +26,20 @@ typedef enum
 	PKULZAV    = 11,	// )
 	LMNOZZAV   = 12,	// {
 	PMNOZZAV   = 13,	// }
-	ID         = 14,	// konstanta nebo nazev promenne
-	FUNKCE	   = 15,	// zavolani funkce
-	DOLAR      = 16		// terminal
+	STREDNIK   = 14,	// ;
+	DEKREMENT  = 15,	// --
+	INKREMENT  = 16,	// ++
+	PRIRAD	   = 17,	// =
+	NEGACE	   = 18,	// !
+	CARKA	   = 19,	// ,
+	KOMENT	   = 20,	// //
+	LKOM	   = 21,	// /*
+	PKOM	   = 22,	// */
+	LPRIR	   = 23,	// <<
+	PPRIR	   = 24,	// >>
+	ID         = 15,	// konstanta nebo nazev promenne
+	FUNKCE	   = 16,	// zavolani funkce
+	DOLAR      = 17		// terminal
 } tTabOperace;
 
 //chyby pri vyhodnocovani tokenu
