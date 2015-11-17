@@ -37,9 +37,9 @@ typedef enum
 	PKOM	   = 22,	// */
 	LPRIR	   = 23,	// <<
 	PPRIR	   = 24,	// >>
-	ID         = 15,	// konstanta nebo nazev promenne
-	FUNKCE	   = 16,	// zavolani funkce
-	DOLAR      = 17		// terminal
+	ID         = 25,	// konstanta nebo nazev promenne
+	FUNKCE	   = 26,	// zavolani funkce
+	DOLAR      = 27		// terminal
 } tTabOperace;
 
 //chyby pri vyhodnocovani tokenu
