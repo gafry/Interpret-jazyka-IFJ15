@@ -1,3 +1,8 @@
+/*
+ * TODO: 
+ 		pridat chybejici vyrazy do precedencni tabulky
+*/
+
 #define RADKY   17
 #define SLOUPCE 17
 
