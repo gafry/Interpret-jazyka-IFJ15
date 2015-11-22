@@ -81,6 +81,7 @@ const tTab precedencni_tabulka[RADKY][SLOUPCE]
 //polozka pro vyrazy
 typedef struct
 {
-	tData data;
 	tTabOperace operace;
+	tHodnota hodnota;
+	tData data;
 } TokenResolved;
