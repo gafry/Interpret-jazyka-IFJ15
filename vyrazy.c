@@ -52,7 +52,7 @@ void ZClear(tZasobnik *zasobnik) {
 	}
 }
 
-tErrVyr ResolveToken(tToken token, TokenResolved t)
+tErrVyr ResolveToken(tToken token, tTokenResolved *t)
 {
 	switch(token.stav)
 	{
@@ -113,7 +113,7 @@ tErrVyr ResolveToken(tToken token, TokenResolved t)
 				break;
 
 		case S_CARKA:
-				t.operace = CARKA;	// ,
+				t.operace = CARKA;	// ,	//TODO: terminal misto znaku , ?
 				break;
 
 		case S_KOMENT:
@@ -137,7 +137,7 @@ tErrVyr ResolveToken(tToken token, TokenResolved t)
 				break;
 
 		case S_STREDNIK:
-				t.operace = STREDNIK;	// ;
+				t.operace = DOLAR;	//terminal
 				break;
 
 		case S_LZ:
@@ -155,7 +155,37 @@ tErrVyr ResolveToken(tToken token, TokenResolved t)
 				t.operace = PMNOZZAV;	// }
 				break;
 
+		case S_TYPDOUBLE:	//hodnota double
+				t->operace   	  = ID;	
+				t->data.promenna  = tDouble;
+				t->data.hodnota.d = strtod(token.data, NULL);
+				//t->data.nazev = ;	//TODO: vygenerovat nazev do tabulky symbolu
 
+				break;
+
+		case S_TYPINT:	//hodnota int
+				t->operace   	  = ID;
+				t->data.promenna  = tInt;
+				t->data.hodnota.i = strtol(token.data, NULL, 10);
+				//t->data.nazev = ;	//TODO: vygenerovat nazev to tabulky symbolu
+				break;
+
+		case S_TYPSTRING:	//retezec
+				t->operace = ID;
+				t->data.promenna = tString;
+				t->data.hodnota->s = token.data;	//TODO: kontrola na NULL? (if(token.data == NULL))
+				//t->data.nazev = ;	//TODO: vygenerovat nazev do tabulky symbolu
+				break;
+
+		case S_IDENT:	//identifikator nebo funkce
+						//TODO: doplnit
+
+				break;
+
+		default:
+				fprintf(stderr, "Token obsahuje neznamy symbol!!\n");
+				return S_CHYBAVS;	
+				break;
 	}
 
 	//return ERR_OK;
