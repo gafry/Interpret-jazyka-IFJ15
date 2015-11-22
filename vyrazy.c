@@ -176,8 +176,39 @@ tErrVyr ResolveToken(tToken token, tTokenResolved *t)
 				t->data.hodnota->s = token.data;	//TODO: kontrola na NULL? (if(token.data == NULL))
 				//t->data.nazev = ;	//TODO: vygenerovat nazev do tabulky symbolu
 				break;
+		/*
+		case S_KLIC:
+				if(strcmp(token.data, "double") == 0)
+				{
+					t->operace = ID;
+					t->data.promenna = tDouble;
+				}
+				//TODO: vygenerovat nazev do tabulky symbolu?
 
-		case S_IDENT:	//identifikator nebo funkce
+				if(strcmp(token.data, "int") == 0)
+				{
+					t->operace = ID;
+					t->data.promenna = tInt;
+				}
+				//TODO: vygenerovat nazev do tabulky symbolu?
+
+				if(strcmp(token.data, "string") == 0)	//TODO: misto string jiny retezec?
+				{
+					t->operace = ID;
+					t->data.promenna = tString;
+				}
+				//TODO: vygenerovat nazev do tabulky symbolu?
+
+				if(strcmp(token.data, "") == 0)
+				break;
+		*/
+
+		case S_CIN:
+				t->operace = ID;
+				//TODO: konzultovat postup
+				break;	
+
+		case S_IDENT:	//identifikator 
 						//TODO: doplnit
 
 				break;
