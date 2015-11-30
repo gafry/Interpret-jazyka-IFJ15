@@ -1,5 +1,4 @@
 #include "ial.h"
-#include "alokator.h"
 
 int TRPVELIKOST = TRP_VELIKOST;
 
@@ -41,7 +40,7 @@ tTRPPolozka *TRPSearch(tTabulka *ptr, tKlic klic){
 	}
 }
 
-void TRPInsert(tTabulka *ptr, tKlic klic, tData data){
+void TRPInsert(tTabulka *ptr, tKlic klic, tData *data){
 	if (ptr != NULL){
 		tTRPPolozka *polozka = TRPSearch(ptr, klic);
 		tTRPPolozka *pom;
@@ -67,11 +66,10 @@ void TRPInsert(tTabulka *ptr, tKlic klic, tData data){
 }
 
 tData *TRPData(tTabulka *ptr, tKlic klic){
-	tTRPPolozka polozka = TRPSearch(ptr, klic);
+	tTRPPolozka *polozka = TRPSearch(ptr, klic);
 	if (polozka != NULL){
-		return &polozka->data;
+		return polozka->data;
 	} else {
 		return NULL;
 	}
 }
-

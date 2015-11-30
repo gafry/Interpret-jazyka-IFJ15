@@ -1,8 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "alokator.h"
-
-#define ERR_ALLOC 5;
 
 ptrAllocStruct firstStruct;
 ptrAllocStruct lastStruct;
@@ -11,13 +7,13 @@ void *newMalloc(int size)
 {
 	ptrAllocStruct record = malloc(sizeof(struct AllocStruct));
 	if (record == NULL)	{
-		error = ERR_ALLOC;
+		error = ERR_INTER;
 		return NULL;
 	}
 
 	void *dataAlloc = (void*) malloc(size);
 	if (dataAlloc == NULL) {
-		error = ERR_ALLOC;
+		error = ERR_INTER;
 		return NULL;
 	}
 
@@ -60,7 +56,7 @@ void diffMem(void *record, int size, void *toBeDestroyed)
 
 	ptrAllocStruct newRecord = malloc(sizeof(struct AllocStruct));
 	if (newRecord == NULL) {
-		error = ERR_ALLOC;
+		error = ERR_INTER;
 		return;
 	}
 

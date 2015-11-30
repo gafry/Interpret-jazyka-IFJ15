@@ -3,30 +3,35 @@
 
 #include "lexikalni_analyzator.h"
 #include "alokator.h"
-#include "str.h"
+#include "syntax.h"
 
 int main (int argc, char **argv) {
 
+    tError error;
+    error = ERR_OK;
+
+    if (argc != 2){
+        error = ERR_INTER;
+        printf("%d\n", error);
+        return error;
+    }
+
 	FILE *f;
 
-	if ((f = fopen(argv[1], "r")) == NULL)
- 	{
- 	    printf("Soubor se nepodarilo otevrit\n");
- 	   	return -1;
-  	} 
+    if ((f = fopen(argv[1], "r")) == NULL){
+        error = ERR_INTER;
+        printf("%d\n", error);
+        return error;
+ 	} 
 
-  	setFile (f);
+    setFile (f);
 
-  	token = getToken();
+    error = s_syntax();
 
-   	while (token.stav != S_EOF) {
-   		printf("%d			%s\n", token.stav, token.data);
-   		token = getToken();
-   	}
+    printf("%d\n", error);
 
-   	fclose(f);
-   	killThemAll();
+    fclose(f);
+    killThemAll();
    	
-   	return 0;
-
+    return error;
 }
