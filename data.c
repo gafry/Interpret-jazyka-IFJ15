@@ -2,7 +2,7 @@
 
 //instrukce -------------------------------------------------------------------------------------------------
 
-tInstrukce newInstr(tITyp op, tData *adr1, tData *adr2, tData *vysl){
+tInstrukce newInstr(tITyp op, char *adr1, char *adr2, char *vysl){
 	tInstrukce I;
 	I.op = op;
 	I.adr1 = adr1;
@@ -81,6 +81,60 @@ void GInsertLast (tGList *G, tGData *funkce){
 
 void GFirst (tGList *G){
 	G->Act = G->First;
+}
+
+void GCopyMain (tGList *G, tInstrList *I){
+
+	GFirst(G);
+	tGElemPtr pom = G->First;
+
+	while (strcmp(pom->funkce->nazev, "main")){
+		pom = pom->rptr;
+	}
+
+	tInstrElemPtr pom2 = pom->funkce->paskaZ;
+	tInstrElemPtr pom3 = pom->funkce->paskaK;
+
+	while (pom2 != pom3){
+
+		ILInsertLast (I, pom2->instr);
+		pom2 = pom2->rptr;
+	}
+
+	ILInsertLast (I, pom2->instr);
+}
+
+//tabulky -------------------------------------------------------------------------------------------------
+
+void TSInit (tTSList *TS){
+	TS->First = NULL;
+	TS->Act = NULL;
+	TS->Last =NULL;
+}
+
+void TSInsertLast (tTSList *TS, tTabulka *tab){
+
+	struct tTSElem *newItem;
+	newItem = newMalloc(sizeof(struct tTSElem));
+	if (error != ERR_OK){
+		return;
+	}
+
+	newItem->ts = tab;
+	newItem->lptr = NULL;
+	newItem->rptr = NULL;
+
+	if (TS->First == NULL) {
+		TS->First = newItem;
+	}
+
+	newItem->lptr = TS->Last;
+
+	if (newItem->lptr != NULL) {
+		newItem->lptr->rptr = newItem;
+	}
+
+	TS->Last = newItem;
 }
 
 /*void DLInitList (tDLList *L) {

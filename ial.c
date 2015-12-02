@@ -50,7 +50,6 @@ void TRPInsert(tTabulka *ptr, tKlic klic, tData *data){
 		} else {
 			polozka = (tTRPPolozka*) newMalloc(sizeof(tTRPPolozka));
 			if (polozka == NULL){
-				//error
 				return;
 			} else {
 				polozka->data = data;
@@ -62,7 +61,6 @@ void TRPInsert(tTabulka *ptr, tKlic klic, tData *data){
 			}
 		}
 	}
-	//error
 }
 
 tData *TRPData(tTabulka *ptr, tKlic klic){
@@ -72,4 +70,50 @@ tData *TRPData(tTabulka *ptr, tKlic klic){
 	} else {
 		return NULL;
 	}
+}
+
+void TRPVynulluj(tTabulka *ptr){
+	if (ptr != NULL) { 
+		for (int i = 0; i < TRPVELIKOST; i++) {
+			tTRPPolozka *polozka = (*ptr)[i];
+			tTRPPolozka *pom;
+			while (polozka != NULL) {
+                pom = polozka;
+                polozka = polozka->next;
+				free(pom);
+			}
+            (*ptr)[i] = NULL;
+		}
+	}
+}
+
+void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty){
+	if (tabFull != NULL) { 
+		for (int i = 0; i < TRPVELIKOST; i++) {
+			tTRPPolozka *polozka = (*tabFull)[i];
+			tTRPPolozka *pom;
+			while (polozka != NULL) {
+                pom = polozka;
+                polozka = polozka->next;				
+
+                tData *dataFrame = newMalloc(sizeof(tData));
+
+                dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+
+                if (pom->data->typ == 1){
+					dataFrame->typ = 1;
+                } else if (pom->data->typ == 2){
+					dataFrame->typ = 2;
+                } else if (pom->data->typ == 3){
+					dataFrame->typ = 3;
+					dataFrame->hodnota->s = NULL;
+                }
+				dataFrame->nazev = pom->data->nazev;
+				dataFrame->def = false;
+				dataFrame->boss = pom->data->boss;
+
+				TRPInsert(tabEmpty, pom->klic, dataFrame);
+			}
+		}
+	} //tTRPPolozka *x = TRPSearch(tabEmpty, "a"); printf("%s\n", x->data->nazev);
 }

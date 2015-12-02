@@ -11,22 +11,31 @@
 //instrukce
 
 typedef enum {
+	I_START,
 	I_LABEL,
 	I_KONEC,
-	I_RAMEC,
+	I_PUSH_FRAME,
+	I_POP_FRAME,
+	I_POP_ALL,
 	I_COUT,
 	I_CIN,
+	I_ADD,
+	I_SUB,
+	I_DIV,
+	I_MUL,
+	I_PRIR,
 } tITyp;
 
 typedef struct {
 	tITyp op;
-	tTRPPolozka *adr1;
-	tTRPPolozka *adr2;
-	tTRPPolozka *vysl;
+	char *adr1;
+	char *adr2;
+	char *vysl;
 } tInstrukce;
 
 typedef struct tInstrElem {
 	tInstrukce instr;
+	struct tInstrElem *jump;
 	struct tInstrElem *lptr;
 	struct tInstrElem *rptr;
 } *tInstrElemPtr;
@@ -55,10 +64,12 @@ typedef struct {
 
 typedef struct tGlobalData {
 	tParamElemPtr params;
-	tTabulka *lokProm;
-	tInstrElemPtr paska;
-	//return
+	//tTabulka *lokProm;
+	tInstrElemPtr paskaZ;
+	tInstrElemPtr paskaK;
+	tInstrElemPtr returnPtr;
 	bool def;
+	char *nazev;
 } tGData, *tGDataPtr;
 
 typedef struct tGElem {              
@@ -72,9 +83,25 @@ typedef struct {
     tGElemPtr Act;                   
     tGElemPtr Last;             
 } tGList;
+
+extern tGList global;
          
+//tabulky
+
+typedef struct tTSElem {
+	tTabulka *ts;
+	struct tTSElem *lptr;
+	struct tTSElem *rptr;
+} *tTSElemPtr;
+
+typedef struct {
+	tTSElemPtr First;
+	tTSElemPtr Act;
+	tTSElemPtr Last;
+} tTSList;
+
 //funkce instrukci     
-tInstrukce newInstr(tITyp op, tData *adr1, tData *adr2, tData *vysl);
+tInstrukce newInstr(tITyp op, char *adr1, char *adr2, char *vysl);
 void ILInit (tInstrList *I);
 void ILInsertLast (tInstrList *I, tInstrukce instr);
 void ILFirst (tInstrList *I);
@@ -83,6 +110,11 @@ void ILFirst (tInstrList *I);
 void GInit (tGList *G);
 void GInsertLast (tGList *G, tGData *funkce);
 void GFirst (tGList *G);
+void GCopyMain (tGList *G, tInstrList *I);
+
+//funkce tabulky
+void TSInit (tTSList *TS);
+void TSInsertLast (tTSList *TS, tTabulka *tab);
 
 /*void DLInitList (tDLList *L);
 void DLInsertFirst (tDLList *L, int val);

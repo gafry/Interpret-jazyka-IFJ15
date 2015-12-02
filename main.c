@@ -1,9 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "lexikalni_analyzator.h"
-#include "alokator.h"
-#include "syntax.h"
+#include "main.h"
 
 int main (int argc, char **argv) {
 
@@ -28,7 +23,12 @@ int main (int argc, char **argv) {
 
     error = s_syntax();
 
-    printf("%d\n", error);
+    if (error == ERR_OK) {
+        
+        error = preloz();
+    }
+
+    printf("\n%d\n", error);
 
     fclose(f);
     killThemAll();

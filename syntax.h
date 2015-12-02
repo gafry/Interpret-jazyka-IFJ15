@@ -12,6 +12,8 @@
 #include "data.h"
 #include "random.h"
 
+extern tTabulka *halda;
+
 tError s_syntax();
 tError s_funkce();
 tError s_stat();
@@ -29,6 +31,7 @@ tError s_cout();
 tError s_cin2();
 tError s_cout2();
 
-char *newLabel(tTabulka* aktTab, tInstrElemPtr newItem);
+char *newFrame(tTabulka* halda, tTabulka *newItem, bool boss);
+char *newStr(tTabulka* halda, char *hodnota);
 
 #endif /* SYNTAX_H_HLAVICKA */

@@ -198,6 +198,10 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
             else if ((c=='e')||(c=='E')){
                     stav = S_DEXP; vlozZnak(c, &pocitadlo);
             } // ODTED BEREME CISLO JAKO CISLO S EXP TYPU DOUBLE
+            else if ((isdigit(c))&&(c!='e')&&(c!='E')){
+                    stav = S_CHYBAVS;
+                    vratZnak(c, soubor);
+            }
             else{
                     vloztStav(stav); vratZnak(c,soubor); stav = S_KONEC;
             } // POKUD DALSI ZNAK NEVYHOVUJE PODMINCE, DOCETLI JSME CELE CISLO, KTERE JE TYPU INT

@@ -1,4 +1,4 @@
-#include "random_name.h"
+#include "random.h"
 
 static unsigned long long int random_num = 999999999;
 tError error;
