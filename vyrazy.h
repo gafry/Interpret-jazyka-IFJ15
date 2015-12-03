@@ -17,3 +17,7 @@ void ZPop(tZasobnik *zasobnik);
 void ZTop(tZasobnik *zasobnik, int *data);
 void ZTopPop(tZasobnik *zasobnik, int *data);
 void ZClear(tZasobnik *zasobnik);
+
+char *newInt(tTabulka* halda, char *hodnota);
+char *newDouble(tTabulka* halda, char *hodnota);
+char *newStr(tTabulka* halda, char *hodnota);

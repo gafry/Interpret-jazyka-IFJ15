@@ -3,15 +3,66 @@
 #include "precedencni_tabulka.h"
 #include "lexikalni_analyzator.h"
 
-void ZInit(tZasobnik *zasobnik) {
+char *newInt(tTabulka* halda, char *hodnota){
+  
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	int hodnota2 = atoi(hodnota);
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+	dataFrame->hodnota->i = hodnota2;
+	dataFrame->typ = 1;
+	dataFrame->def = true;
+	dataFrame->boss = false;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+char *newDouble(tTabulka* halda, char *hodnota){
+  
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	double hodnota2;
+	sscanf(hodnota, "%lf", &hodnota2);
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+	dataFrame->hodnota->d = hodnota2;
+	dataFrame->typ = 2;
+	dataFrame->def = true;
+	dataFrame->boss = false;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+char *newStr(tTabulka* halda, char *hodnota){
+  
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	dataFrame->hodnota = newMalloc((strlen(key)+1)*sizeof(char));
+	dataFrame->hodnota->s = hodnota;
+	dataFrame->typ = 3;
+	dataFrame->def = true;
+	dataFrame->boss = false;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+void VInit(tZasobnik *zasobnik) {
 	zasobnik->vrchol = NULL;
 }
 
-int ZEmpty(tZasobnik *zasobnik) {
+int VEmpty(tZasobnik *zasobnik) {
 	return (zasobnik->vrchol == NULL) ? 1 : 0;
 }
 
-void ZPush(tZasobnik *zasobnik, int data) {
+void VPush(tZasobnik *zasobnik, int data) {
 
 	struct tPrvek *newItem;
 	newItem = newMalloc(sizeof(struct tPrvek));
@@ -25,7 +76,7 @@ void ZPush(tZasobnik *zasobnik, int data) {
 	zasobnik->vrchol = newItem;
 }
 
-void ZPop(tZasobnik *zasobnik) {
+void VPop(tZasobnik *zasobnik) {
 	if (!(ZEmpty(zasobnik))) {
 		tPrvekPtr item = zasobnik->vrchol;
 		zasobnik->vrchol = item->next;
@@ -33,7 +84,7 @@ void ZPop(tZasobnik *zasobnik) {
 	}
 }
 
-void ZTop(tZasobnik *zasobnik, int *data) {
+void VTop(tZasobnik *zasobnik, int *data) {
 	if (ZEmpty(zasobnik)) {
 		return NULL;
 	} else {
@@ -41,12 +92,12 @@ void ZTop(tZasobnik *zasobnik, int *data) {
 	}
 }
 
-void ZTopPop(tZasobnik *zasobnik, int *data) {
+void VTopPop(tZasobnik *zasobnik, int *data) {
 	ZTop(zasobnik, data);
 	ZPop(zasobnik);
 }
 
-void ZClear(tZasobnik *zasobnik) {
+void VSClear(tZasobnik *zasobnik) {
 	while (zasobnik->vrchol != NULL) {
 		ZPop(zasobnik);
 	}
