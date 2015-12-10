@@ -17,7 +17,7 @@ typedef union {
 	char *s;
 	void *label;
 	void *tabulka;
-	bool b;
+	void *args;
 } tHodnota;
 
 typedef struct tdata {
@@ -26,12 +26,17 @@ typedef struct tdata {
 	//3 string
 	//4 label
 	//5 tabulka
-	//6 bool
+	//6 seznam parametru
+	//7 auto
 	int typ;
 	tHodnota *hodnota;
 	char *nazev;
 	bool def;
-	bool boss;
+	//0 neni to ramec
+	//1 hlavni ramec - funkce
+	//2 zacatek vnoreneho bloku
+	//3 random shit
+	int ramec;
 } tData;
 
 typedef struct tTRPpolozka {
@@ -50,7 +55,7 @@ void TRPInit(tTabulka *ptr);
 tTRPPolozka *TRPSearch(tTabulka *ptr, tKlic klic);
 void TRPInsert(tTabulka *ptr, tKlic klic, tData *data);
 tData *TRPData(tTabulka *ptr, tKlic klic);
-void TRPVynulluj(tTabulka *ptr);
 void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty);
+void TRPDelete(tTabulka *tab);
 
 #endif /* IAL_H_TABULKADATA */

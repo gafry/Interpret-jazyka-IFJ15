@@ -12,18 +12,18 @@ typedef struct AllocStruct
 } tAllocStruct, *ptrAllocStruct;
 
 typedef enum {
-	ERR_OK,
-	ERR_LEX,
-	ERR_SYN,
-	ERR_SEM_NEDEF,
-	ERR_SEM_VYRAZ,
-	ERR_SEM_TYP,
-	ERR_SEM_OST,
-	ERR_VSTUP,
-	ERR_NEINIT,
-	ERR_NULA,
-	ERR_OST,
-	ERR_INTER = 99	
+	ERR_OK,				//0
+	ERR_LEX,			//1
+	ERR_SYN,			//2
+	ERR_SEM_NEDEF,		//3
+	ERR_SEM_VYRAZ,		//4
+	ERR_SEM_TYP,		//5
+	ERR_SEM_OST,		//6
+	ERR_VSTUP,			//7
+	ERR_NEINIT,			//8
+	ERR_NULA,			//9
+	ERR_OST,			//10
+	ERR_INTER = 99		//99
 } tError;
 
 extern tError error;

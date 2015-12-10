@@ -2,20 +2,20 @@
 
 tTabulka *halda;
 
-void ZInit(tZasobnik *zasobnik) {
+void ZInit(tStack *zasobnik) {
 
 	zasobnik->vrchol = NULL;
 }
 
-int ZEmpty(tZasobnik *zasobnik) {
+int ZEmpty(tStack *zasobnik) {
 
 	return (zasobnik->vrchol == NULL) ? 1 : 0;
 }
 
-void ZPush(tZasobnik *zasobnik, tTabulka *tab, bool boss) {
+void ZPush(tStack *zasobnik, tTabulka *tab, int ramec) {
 
-	struct tPrvek *newItem;
-	newItem = newMalloc(sizeof(struct tPrvek));
+	struct tStackPrvek *newItem;
+	newItem = newMalloc(sizeof(struct tStackPrvek));
 	if (newItem == NULL){
 		return ;
 	}
@@ -29,55 +29,82 @@ void ZPush(tZasobnik *zasobnik, tTabulka *tab, bool boss) {
 	TRPCopy(tab, newItem->tab);
 
 	newItem->next = zasobnik->vrchol;
-	newItem->boss = boss;
+	newItem->ramec = ramec;
 	zasobnik->vrchol = newItem;
 }
 
-void ZPop(tZasobnik *zasobnik) {
+void ZPop(tStack *zasobnik, int i) {
 
 	if (!(ZEmpty(zasobnik))) {
-		tPrvekPtr item = zasobnik->vrchol;
-		zasobnik->vrchol = item->next;
-		free(item);
+		tStackPrvekPtr item = zasobnik->vrchol;
+		//tTabulka *ptr1;
+		bool pomBool = true;
+		while (pomBool){ 
+			if (item->ramec == i){
+				pomBool = false;
+			}
+			item = item->next;
+			/*ptr1 = item->tab;
+			TRPDelete(ptr1);
+			free(item);*/
+		}
+		zasobnik->vrchol = item;
 	}
 }
 
-void ZTop(tZasobnik *zasobnik, tTabulka *tab) {
-
-	if (ZEmpty(zasobnik)) {
-		return ;
-	} else {
-		tab = zasobnik->vrchol->tab;
-	}
-}
-
-void ZTopPop(tZasobnik *zasobnik, tTabulka *tab) {
-
-	ZTop(zasobnik, tab);
-	ZPop(zasobnik);
-}
-
-void ZClear(tZasobnik *zasobnik) {
-
-	while (zasobnik->vrchol != NULL) {
-		ZPop(zasobnik);
-	}
-}
-
-tTRPPolozka *ZSearch(tZasobnik *zasobnik, char *nazev) {
+tTRPPolozka *ZSearch(tStack *zasobnik, char *nazev) {
 
 	tTRPPolozka *pom;
-	tPrvekPtr pom1 = zasobnik->vrchol;
+	tStackPrvekPtr pom1 = zasobnik->vrchol;
 	bool x = true;
 
 	while (x){
 		pom = TRPSearch(pom1->tab, nazev);
 
-		if (strcmp(nazev, pom->data->nazev) == 0){
+		if (pom == NULL){
+			if (pom1->ramec != 1){
+				pom1 = pom1->next;
+			} else x = false;
+		} else if (strcmp(nazev, pom->data->nazev) == 0){
 			x = false;
 			return pom;
 		} else {
-			if (pom1->boss == false){
+			if (pom1->ramec != 1){
+				pom1 = pom1->next;
+			} else x = false;
+		}
+	}
+
+	pom = TRPSearch(halda, nazev);
+	return pom;
+}
+
+tTRPPolozka *ZRekurzeSearch(tStack *zasobnik, char *nazev) {
+
+	tTRPPolozka *pom;
+	tStackPrvekPtr pom1 = zasobnik->vrchol;
+	bool x = true;
+	bool y = true;
+
+	while (y){
+		if (pom1->ramec == 1){
+			y = false;
+			pom1 = pom1->next;
+		} else pom1 = pom1->next;
+	}
+
+	while (x){
+		pom = TRPSearch(pom1->tab, nazev);
+
+		if (pom == NULL){
+			if (pom1->ramec != 1){
+				pom1 = pom1->next;
+			} else x = false;
+		} else if (strcmp(nazev, pom->data->nazev) == 0){
+			x = false;
+			return pom;
+		} else {
+			if (pom1->ramec != 1){
 				pom1 = pom1->next;
 			} else x = false;
 		}

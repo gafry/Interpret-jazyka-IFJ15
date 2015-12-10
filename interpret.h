@@ -4,11 +4,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <ctype.h> 
 
 #include "stack.h"
 #include "data.h"
 #include "ial.h"
 #include "alokator.h"
+#include "vyrazy.h"
 
 tError preloz();
 

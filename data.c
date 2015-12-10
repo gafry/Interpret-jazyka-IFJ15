@@ -14,6 +14,7 @@ tInstrukce newInstr(tITyp op, char *adr1, char *adr2, char *vysl){
 void ILInit (tInstrList *I){
 	I->First = NULL;
 	I->Act = NULL;
+	I->Pom = NULL;
 	I->Last = NULL;
 }
 
@@ -28,6 +29,7 @@ void ILInsertLast (tInstrList *I, tInstrukce instr){
 	newItem->instr = instr;
 	newItem->rptr = NULL;
 	newItem->lptr = NULL;
+	newItem->jump = NULL;
 
 	if (I->First == NULL) {
 		I->First = newItem;
@@ -104,6 +106,32 @@ void GCopyMain (tGList *G, tInstrList *I){
 	ILInsertLast (I, pom2->instr);
 }
 
+bool GFind (tGList *G, char *name){
+	GFirst(G);
+	while (1){
+		if (G->Act == NULL){
+			return false;
+		}
+
+		if (!(strcmp(G->Act->funkce->nazev, name))){
+			return true;
+		} else G->Act = G->Act->rptr;
+	}
+}
+
+tGData *GFindData (tGList *G, char *name){
+	GFirst(G);
+	while (1){
+		if (G->Act == NULL){
+			return NULL;
+		}
+
+		if (!(strcmp(G->Act->funkce->nazev, name))){
+			return G->Act->funkce;
+		} else G->Act = G->Act->rptr;
+	}
+}
+
 //tabulky -------------------------------------------------------------------------------------------------
 
 void TSInit (tTSList *TS){
@@ -137,161 +165,120 @@ void TSInsertLast (tTSList *TS, tTabulka *tab){
 	TS->Last = newItem;
 }
 
-/*void DLInitList (tDLList *L) {
+//parametry ------------------------------------------------------------------------------------------------
 
-    L->First = NULL;
-    L->Act = NULL;
-    L->Last = NULL;
+void PInit (tParamList *P){
+	P->First = NULL;
+	P->Act = NULL;
+	P->Last = NULL;
 }
 
-void DLInsertFirst (tDLList *L, int val) {
+bool PCheck (tParamElemPtr par1, tParamElemPtr par2){
 
-	struct tDLElem *newItem;
-	newItem = newMalloc(sizeof(struct tDLElem));
-	if (newItem == NULL) {
+	while(1){
+		if (par1 == NULL || par2 == NULL){
+			if (par1 != par2){
+				return false;
+			}
+		} else {
+			if ((par1->data->typ != par2->data->typ) || (par1->data->nazev != par2->data->nazev)){
+				return false;
+			} else {
+				par1 = par1->rptr;
+				par2 = par2->rptr;
+			}
+		}
+	}
+}
+
+void PInsertTab (tParamElemPtr par, tTabulka *tab){
+
+	while(1){
+		if (par == NULL){
+			return;
+		}
+
+		TRPInsert(tab, par->data->nazev, par->data);
+		par = par->lptr;
+	}
+}
+
+void PInsertLast (tParamList *P, int typ, char *nazev){
+
+	struct tParamElem *newItem;
+	newItem = newMalloc(sizeof(struct tParamElem));
+	if (error != ERR_OK){
 		return;
 	}
 
-	newItem->data = val;
-	newItem->rptr = NULL;
+	tData *dataFrame = newMalloc(sizeof(tData));
+	if (error != ERR_OK) return;
+
+    dataFrame->typ = typ;
+    dataFrame->nazev = nazev;
+    dataFrame->def = false;
+    dataFrame->ramec = 0;
+
+	newItem->data = dataFrame;
 	newItem->lptr = NULL;
-	
-	if (L->First == NULL) {
-		L->Last = newItem;
-	}
-
-	newItem->rptr = L->First;
-
-	if (newItem->rptr != NULL) {
-		newItem->rptr->lptr = newItem;
-	}
-
-	L->First = newItem;
-}
-
-void DLInsertLast(tDLList *L, int val) {
-
-	struct tDLElem *newItem;
-	newItem = newMalloc(sizeof(struct tDLElem));
-	if (newItem == NULL) {
-		return;
-	}
-
-	newItem->data = val;
 	newItem->rptr = NULL;
-	newItem->lptr = NULL;
 
-	if (L->First == NULL) {
-		L->First = newItem;
+	if (P->First == NULL) {
+		P->First = newItem;
 	}
 
-	newItem->lptr = L->Last;
+	newItem->lptr = P->Last;
 
 	if (newItem->lptr != NULL) {
 		newItem->lptr->rptr = newItem;
 	}
 
-	L->Last = newItem;
-	
+	P->Last = newItem;
 }
 
-void DLFirst (tDLList *L) {
+void PInsertArg (tParamList *P, int typ, char *nazev, int i, double d, char *s){
 
-	L->Act = L->First;
-
-}
-
-void DLLast (tDLList *L) {
-	
-	L->Act = L->Last;
-	
-}
-
-void DLCopyFirst (tDLList *L, int *val) {
-
-	if (L->First == NULL) {
+	struct tParamElem *newItem;
+	newItem = newMalloc(sizeof(struct tParamElem));
+	if (error != ERR_OK){
 		return;
-	} else {
-		*val = L->First->data;
 	}
-}
 
-void DLCopyLast (tDLList *L, int *val) {
-	
-	if (L->First == NULL) {
-		return;
-	} else {
-		*val = L->Last->data;
+	tData *dataFrame = newMalloc(sizeof(tData));
+	if (error != ERR_OK) return;
+
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+    if (error != ERR_OK) return;
+
+    dataFrame->nazev = NULL;
+
+    if (typ == 0){
+    	dataFrame->nazev = nazev;
+    } else if (typ == 1){
+    	dataFrame->hodnota->i = i;
+    } else if (typ == 2){
+    	dataFrame->hodnota->d = d;
+    } else if (typ == 3){
+    	dataFrame->hodnota->s = s;
+    }
+
+    dataFrame->typ = typ;    
+    dataFrame->def = false;
+    dataFrame->ramec = 0;
+
+	newItem->data = dataFrame;
+	newItem->lptr = NULL;
+	newItem->rptr = NULL;
+
+	if (P->First == NULL) {
+		P->First = newItem;
 	}
-}
 
-void DLPostInsert (tDLList *L, int val) {
-	
-	if (L->Act != NULL) {
-        
-    	struct tDLElem *newItem;
-    	if ((newItem = newMalloc(sizeof(struct tDLElem))) == NULL) {
-        	return;
-	    }
+	newItem->lptr = P->Last;
 
-    	newItem->data = val;
-    	newItem->rptr = NULL;
-    	newItem->lptr = NULL;
- 
-    	if (L->Act->rptr != NULL) {
-        	L->Act->rptr->lptr = newItem;
-        	newItem->rptr = L->Act->rptr;
-    	} else
-    	    L->Last = newItem;
- 
-    	L->Act->rptr = newItem;
-    	newItem->lptr = L->Act;
-
+	if (newItem->lptr != NULL) {
+		newItem->lptr->rptr = newItem;
 	}
+
+	P->Last = newItem;
 }
-
-void DLPreInsert (tDLList *L, int val) {
-	
-	if (L->Act != NULL) { 
-
-    	struct tDLElem *newItem;
-    	if ((newItem = newMalloc(sizeof(struct tDLElem))) == NULL) {
-    	    return;
-    	}
-
-    	newItem->data = val;
-    	newItem->rptr = NULL;
-    	newItem->lptr = NULL;
- 
-    	if (L->Act->lptr != NULL) {
-    	    L->Act->lptr->rptr = newItem;
-    	    newItem->lptr = L->Act->lptr;
-    	} else
-    	    L->First = newItem;
- 
-    	L->Act->lptr = newItem;
-    	newItem->rptr = L->Act;
-
-	}
-}
-
-void DLSucc (tDLList *L) {
-	
-	if (L->Act != NULL) {
-		L->Act = L->Act->rptr;
-	}
-}
-
-
-void DLPred (tDLList *L) {
-	
-	if (L->Act != NULL) {
-		L->Act = L->Act->lptr;
-	}
-}
-
-int DLActive (tDLList *L) {
-	
-	return (L->Act == NULL) ? 0 : 1;
-	
-}*/

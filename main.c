@@ -7,7 +7,7 @@ int main (int argc, char **argv) {
 
     if (argc != 2){
         error = ERR_INTER;
-        printf("%d\n", error);
+        //printf("%d\n", error);
         return error;
     }
 
@@ -15,7 +15,7 @@ int main (int argc, char **argv) {
 
     if ((f = fopen(argv[1], "r")) == NULL){
         error = ERR_INTER;
-        printf("%d\n", error);
+        //printf("%d\n", error);
         return error;
  	} 
 
@@ -28,10 +28,11 @@ int main (int argc, char **argv) {
         error = preloz();
     }
 
-    printf("\n%d\n", error);
+    printf("\nerror : %d\n", error);
 
     fclose(f);
     killThemAll();
    	
+    //NA CHYBOVY VYSTUP!!!!!!!
     return error;
 }

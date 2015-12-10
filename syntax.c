@@ -1,19 +1,19 @@
 #include "syntax.h"
 
 int main_cnt = 0;
-bool for_check = false;
-bool isBoss = false;
+int ramec_check = 0;
 char *nazevFunkce;
+char *pomFun;
+char *randomNull = NULL;
 tError error;
 
-tInstrList pomPaska; //pomocna paska, ktera se pak ulozi do dat aktualni funkce
+tParamList pomParametry;
+extern tInstrList pomPaska; //pomocna paska, ktera se pak ulozi do dat aktualni funkce
 tGList global; //seznam globalnich funkci
 tTSList tabulkaSymbolu; //seznam globalnich promennych
 
-tTabulka *pomTab; //zatim nevim na co
 tTabulka *aktTab; //aktualni tabulka
 tTabulka *halda; //halda pomocnych promennych
-tGData *aktFunkce; //data aktualne zpracovavane funkce
 tInstrukce aktInstrukce; //instrukce, ktera se zrovna uklada
 
 tError s_syntax(){
@@ -60,16 +60,20 @@ tError s_syntax(){
 
 tError s_funkce(){
 
+	int typFunkce;
+
+	PInit(&pomParametry);
+
 	if (error != ERR_OK){
 		return error;
 	}
 
 	if (token.stav == S_DOUBLE) {
-
+		typFunkce = 2;
 	} else if (token.stav == S_INT) {
-
+		typFunkce = 1;
 	} else if (token.stav == S_STRING) {
-
+		typFunkce = 3;
 	} else if (token.stav == EOF) {
 		return error;
 	} else return ERR_SYN;
@@ -85,6 +89,33 @@ tError s_funkce(){
 
 	if (strcmp("main", token.data)){  //neni main
 
+		if (!strcmp("length", token.data) ||
+			!strcmp("substr", token.data) ||
+			!strcmp("concat", token.data) ||
+			!strcmp("find", token.data) ||
+			!strcmp("sort", token.data)){
+			return ERR_SEM_NEDEF;
+		}
+
+		nazevFunkce = token.data;
+		bool insert = false;
+
+		tGData *newItem = GFindData (&global, nazevFunkce);
+		if (newItem == NULL){
+			insert = true;
+			newItem = newMalloc(sizeof(struct tGlobalData));
+		} else {
+			if (newItem->def){
+				return ERR_SEM_NEDEF;
+			} else if (newItem->typ != typFunkce){
+				return ERR_SEM_NEDEF;
+			}
+		}
+
+		if (error != ERR_OK){
+			return error;
+		}
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
@@ -99,7 +130,21 @@ tError s_funkce(){
 			return error;
 		}
 
-		error = s_param();
+		/* zpracovani parametru
+		   pokud je funkce nedefinovana, vytvorim novou
+		   tabulku symbolu a zavolam funkci pro zpracovani
+		   parametru, v opacnem pripade porovnam typy */
+
+		if (insert){
+			error = s_param();
+			newItem->params = pomParametry.First;
+		} else {
+			error = s_param();
+			if ((PCheck (newItem->params , pomParametry.First)) == false){
+				return ERR_SEM_VYRAZ;
+			}
+		}
+		
 		if (error != ERR_OK){
 			return error;
 		}
@@ -108,24 +153,25 @@ tError s_funkce(){
 			return ERR_SYN;
 		}
 
+		//konec s parametry
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		if (token.stav == S_SLZ){
+		// V pripade, ze dalsi token je strednik,
+		// tak ulozim funkci do seznamu a pokracuju
+		// v rekurzivnim sestupu
 
-			token = getToken();
-			if (token.stav == S_CHYBAVS){
-				return error;
-			}
+		if (token.stav == S_STREDNIK){
+			
+			newItem->def = false;
+			newItem->typ = typFunkce;
+			newItem->nazev = nazevFunkce;
 
-			error = s_stat();
-			if (error != ERR_OK){
-				return error;
-			}
-
-		} else if (token.stav == S_STREDNIK) {
+			GInsertLast (&global, newItem);
+			newItem = NULL;
 
 			token = getToken();
 			if (token.stav == S_CHYBAVS){
@@ -133,12 +179,75 @@ tError s_funkce(){
 			}
 
 			return s_funkce();
+		}
+
+		// pokud nenasleduje strednik, tak musi nasledovat
+		// slozena zavorka, jinak je to chyba
+		/* vygeneruju si instrukci zacatku funkce, vlozim
+		   instrukci, ktera mi pushne parametry jako ramec
+		   s hodnotou 1 a zavolam s_stat() */
+
+		if (token.stav == S_SLZ){
+
+			pomFun = newLabel(halda);
+
+			aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+			if (error != ERR_OK){
+				return error;
+			}
+			TRPInit(aktTab);
+			ramec_check = 1;
+
+			PInsertTab (newItem->params, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktInstrukce = newInstr(I_START_FUNKCE, pomFun, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
 
 		} else return ERR_SYN;
+
+		token = getToken();
+		if (token.stav == S_CHYBAVS){
+			return error;
+		}
+
+		error = s_stat();
+		if (error != ERR_OK){
+			return error;
+		}
 
 		if (token.stav != S_SPZ){
 			return ERR_SYN;
 		}
+
+		// vlozim label pro konec funkce a instrukci pro zruseni ramcu funkce
+
+		aktInstrukce = newInstr(I_KONEC_FUNKCE, pomFun, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		aktInstrukce = newInstr(I_POP_ALL, NULL, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		// ulozim data do seznamu, zrusim pomocnou pasku a vratim
+		// funkci s_funkce()
+
+		newItem->typ = typFunkce;
+		newItem->nazev = nazevFunkce;
+		newItem->paskaZ = pomPaska.First;
+		newItem->paskaK = pomPaska.Last;
+
+		if (insert){
+			GInsertLast (&global, newItem);
+		}
+		newItem = NULL;
+		ILInit(&pomPaska);
+		PInit(&pomParametry);
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
@@ -148,6 +257,10 @@ tError s_funkce(){
 		return s_funkce();
 
 	} else { //main
+
+		if (typFunkce != 1){
+			return ERR_SYN;
+		}
 
 		main_cnt++;
 
@@ -186,22 +299,22 @@ tError s_funkce(){
 			return error;
 		}
 
-		aktInstrukce = newInstr(I_START, NULL, NULL, NULL);
+		pomFun = newLabel(halda);
+
+		aktInstrukce = newInstr(I_START, pomFun, NULL, NULL);
 		ILInsertLast(&pomPaska, aktInstrukce);
 
 		newItem->params = NULL;
 		newItem->def = true;
+		newItem->typ = 1;
 		newItem->nazev = nazevFunkce;
 
-		aktFunkce = newItem;
-
-		isBoss = true;
 		aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
 		if (error != ERR_OK){
 			return error;
 		}
-
 		TRPInit(aktTab);
+		ramec_check = 1;
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
@@ -226,7 +339,7 @@ tError s_funkce(){
 			return ERR_SYN;
 		}
 
-		aktInstrukce = newInstr(I_KONEC, NULL, NULL, NULL);
+		aktInstrukce = newInstr(I_KONEC, pomFun, NULL, NULL);
 		ILInsertLast(&pomPaska, aktInstrukce);
 
 		newItem->paskaZ = pomPaska.First;
@@ -235,6 +348,7 @@ tError s_funkce(){
 		GInsertLast (&global, newItem);
 		newItem = NULL;
 		ILInit(&pomPaska);
+		PInit(&pomParametry);
 
 		return error;
 	}
@@ -248,6 +362,24 @@ tError s_stat(){
 
 	if (token.stav == S_IF){ /////////////////////////////////////////////////////////////////////////////////////////////////
 
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
+
+		aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+		if (error != ERR_OK){
+			return error;
+		}
+		TRPInit(aktTab);
+		ramec_check = 2;
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
@@ -257,22 +389,8 @@ tError s_stat(){
 			return ERR_SYN;
 		}
 
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-
-		error = s_exp();
+		error = expr(&randomNull);
 		if (error != ERR_OK){
-			return error;
-		}
-
-		if (token.stav != S_PZ){
-			return ERR_SYN;
-		}
-
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
@@ -284,6 +402,10 @@ tError s_stat(){
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
+
+		char *pomIf = newLabel(halda);
+		aktInstrukce = newInstr(I_IF, pomIf, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
 
 		error = s_stat();
 		if (error != ERR_OK){
@@ -299,16 +421,41 @@ tError s_stat(){
 			return error;
 		}
 
-		return s_else();
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
+
+		aktInstrukce = newInstr(I_POP_FRAME, NULL, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		return s_else(pomIf);
 
 	} else if (token.stav == S_RETURN){ /////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		error = s_exp();
+		error = expr(&randomNull);
 		if (error != ERR_OK){
 			return error;
 		}
@@ -322,9 +469,30 @@ tError s_stat(){
 			return error;
 		}
 
-		return error;
+		aktInstrukce = newInstr(I_RETURN, pomFun, nazevFunkce, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		return s_stat();
 
 	} else if (token.stav == S_SLZ){ /////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
+
+		aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+		if (error != ERR_OK){
+			return error;
+		}
+		TRPInit(aktTab);
+		ramec_check = 2;
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
@@ -348,6 +516,17 @@ tError s_stat(){
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
+		}
+
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
 		}
 
 		return s_stat();
@@ -363,38 +542,295 @@ tError s_stat(){
 			return ERR_SYN;
 		}
 
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
+
+		aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+		if (error != ERR_OK){
 			return error;
 		}
-
-		if (token.stav == S_INT){
-
-		} else if (token.stav == S_DOUBLE){
-		
-		} else if (token.stav == S_STRING){
-
-		} else if (token.stav == S_AUTO){
-
-		} else return ERR_SYN;
-
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-
-		if (token.stav != S_IDENT){
-			return ERR_SYN;
-		}
+		TRPInit(aktTab);
+		ramec_check = 2;
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		for_check = true;
+		if (token.stav == S_INT){//..................................................................
 
-		error = s_def();
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav != S_IDENT){
+				return ERR_SYN;
+			}
+
+			char *pomIdent = token.data;
+
+			if (TRPSearch(aktTab, token.data) != NULL){
+				return ERR_SEM_NEDEF;
+			}
+
+			tData *aktData = newMalloc(sizeof(struct tdata));
+			if (error != ERR_OK){
+				return error;
+			}
+
+			aktData->typ = 1;
+			aktData->nazev = token.data;
+			aktData->def = false;
+			aktData->ramec = 0;
+
+			TRPInsert(aktTab, token.data, aktData);
+
+			if (aktTab != NULL){
+				TSInsertLast (&tabulkaSymbolu, aktTab);
+				char *pom;
+				pom = newFrame(halda, aktTab, ramec_check);
+
+				aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				aktTab = NULL;
+			}
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav == S_PRIR){
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+				char *lastExp = NULL;
+
+				error = expr(&lastExp);
+
+				aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+			}		
+
+			if (token.stav != S_STREDNIK){
+				return ERR_SYN;
+			}
+
+		} else if (token.stav == S_DOUBLE){//..................................................................
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav != S_IDENT){
+				return ERR_SYN;
+			}
+
+			char *pomIdent = token.data;
+
+			if (TRPSearch(aktTab, token.data) != NULL){
+				return ERR_SEM_NEDEF;
+			}
+
+			tData *aktData = newMalloc(sizeof(struct tdata));
+			if (error != ERR_OK){
+				return error;
+			}
+
+			aktData->typ = 2;
+			aktData->nazev = token.data;
+			aktData->def = false;
+			aktData->ramec = 0;
+
+			TRPInsert(aktTab, token.data, aktData);
+
+			if (aktTab != NULL){
+				TSInsertLast (&tabulkaSymbolu, aktTab);
+				char *pom;
+				pom = newFrame(halda, aktTab, ramec_check);
+
+				aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				aktTab = NULL;
+			}
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav == S_PRIR){
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+				char *lastExp = NULL;
+
+				error = expr(&lastExp);
+
+				aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+			}		
+
+			if (token.stav != S_STREDNIK){
+				return ERR_SYN;
+			}
+					
+		} else if (token.stav == S_STRING){//..................................................................
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav != S_IDENT){
+				return ERR_SYN;
+			}
+
+			char *pomIdent = token.data;
+
+			if (TRPSearch(aktTab, token.data) != NULL){
+				return ERR_SEM_NEDEF;
+			}
+
+			tData *aktData = newMalloc(sizeof(struct tdata));
+			if (error != ERR_OK){
+				return error;
+			}
+
+			aktData->typ = 3;
+			aktData->nazev = token.data;
+			aktData->def = false;
+			aktData->ramec = 0;
+
+			TRPInsert(aktTab, token.data, aktData);
+
+			if (aktTab != NULL){
+				TSInsertLast (&tabulkaSymbolu, aktTab);
+				char *pom;
+				pom = newFrame(halda, aktTab, ramec_check);
+
+				aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				aktTab = NULL;
+			}
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav == S_PRIR){
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+				char *lastExp = NULL;
+
+				error = expr(&lastExp);
+
+				aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+			}		
+
+			if (token.stav != S_STREDNIK){
+				return ERR_SYN;
+			}
+			
+		} else if (token.stav == S_AUTO){//..................................................................
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav != S_IDENT){
+				return ERR_SYN;
+			}
+
+			char *pomIdent = token.data;
+
+			if (TRPSearch(aktTab, token.data) != NULL){
+				return ERR_SEM_NEDEF;
+			}
+
+			tData *aktData = newMalloc(sizeof(struct tdata));
+			if (error != ERR_OK){
+				return error;
+			}
+
+			aktData->typ = 6;
+			aktData->nazev = token.data;
+			aktData->def = false;
+			aktData->ramec = 0;
+
+			TRPInsert(aktTab, token.data, aktData);
+
+			if (aktTab != NULL){
+				TSInsertLast (&tabulkaSymbolu, aktTab);
+				char *pom;
+				pom = newFrame(halda, aktTab, ramec_check);
+
+				aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				aktTab = NULL;
+			}
+
+			token = getToken();
+			if (token.stav == S_CHYBAVS){
+				return error;
+			}
+
+			if (token.stav == S_PRIR){
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+				
+				char *lastExp = NULL;
+
+				error = expr(&lastExp);
+
+				aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+			} else return ERR_SEM_TYP;	
+
+			if (token.stav != S_STREDNIK){
+				return ERR_SYN;
+			}
+			
+		} else return ERR_SYN;//................................................................................
+
+		token = getToken();
+		if (token.stav == S_CHYBAVS){
+			return error;
+		}
+
+		char *pomFor = newLabel(halda);
+
+		aktInstrukce = newInstr(I_FOR, pomFor, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		error = expr(&randomNull);
 		if (error != ERR_OK){
 			return error;
 		}
@@ -408,44 +844,36 @@ tError s_stat(){
 			return error;
 		}
 
-		error = s_exp();
-		if (error != ERR_OK){
-			return error;
-		}
-
-		if (token.stav != S_STREDNIK){
-			return ERR_SYN;
-		}
-
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
+		aktInstrukce = newInstr(I_FOR_VYRAZ, pomFor, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
 
 		if (token.stav != S_IDENT){
 			return ERR_SYN;
 		}
 
+		char *pomIdent2 = token.data;
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		error = s_prir();
-		if (error != ERR_OK){
-			return error;
-		}
-
-		if (token.stav != S_PZ){
+		if (token.stav != S_PRIR){
 			return ERR_SYN;
 		}
 
-		for_check = false;
+		token.data = "(";
+		token.stav = S_LZ;
 
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
+		char *lastExp = NULL;
+
+		error = expr(&lastExp);
+
+		aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent2);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		aktInstrukce = newInstr(I_FOR_START, pomFor, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
 
 		if (token.stav != S_SLZ){
 			return ERR_SYN;
@@ -470,16 +898,96 @@ tError s_stat(){
 			return error;
 		}
 
+		aktInstrukce = newInstr(I_FOR_KONEC, pomFor, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		aktInstrukce = newInstr(I_POP_FRAME, NULL, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
 		return s_stat();
 
 	} else if (token.stav == S_IDENT){ /////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (aktTab != NULL){
+			TSInsertLast (&tabulkaSymbolu, aktTab);
+			char *pom;
+			pom = newFrame(halda, aktTab, ramec_check);
+
+			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+			aktTab = NULL;
+		}
+
+		char *pomIdent = token.data;
 
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		error = s_prir();
+		if (token.stav != S_PRIR){
+			return ERR_SYN;
+		}
+
+		token = getToken();
+		if (token.stav == S_CHYBAVS){
+			return error;
+		}
+
+		if (token.stav == S_IDENT){
+
+			if ((GFind (&global, token.data)) || (strcmp(nazevFunkce, token.data) == 0)){ 
+
+				char *pomIdent2 = token.data;
+
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+				if (token.stav != S_LZ) return ERR_SYN;
+
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+				error = s_arg();
+
+				if (token.stav != S_PZ) return ERR_SYN;
+
+				char *pom = newArgs(halda, pomParametry.First);
+
+				aktInstrukce = newInstr(I_FUNKCE, pomIdent2, pom, NULL);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				aktInstrukce = newInstr(I_PRIR, NULL, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+				token = getToken();
+				if (token.stav == S_CHYBAVS){
+					return error;
+				}
+
+			} else {
+				char *lastExp = NULL;
+
+				error = expr(&lastExp);
+
+				aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+				ILInsertLast(&pomPaska, aktInstrukce);
+
+			} 
+		} else {
+			char *lastExp = NULL;
+
+			error = expr(&lastExp);
+
+			aktInstrukce = newInstr(I_PRIR, lastExp, NULL, pomIdent);
+			ILInsertLast(&pomPaska, aktInstrukce);
+
+		}
 		if (error != ERR_OK){
 			return error;
 		}
@@ -506,6 +1014,15 @@ tError s_stat(){
 			return ERR_SYN;
 		}
 
+		if (aktTab == NULL){
+			aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+			if (error != ERR_OK){
+				return error;
+			}
+			TRPInit(aktTab);
+			ramec_check = 3;
+		}
+
 		if (TRPSearch(aktTab, token.data) != NULL){
 			return ERR_SEM_NEDEF;
 		}
@@ -518,6 +1035,7 @@ tError s_stat(){
 		aktData->typ = 1;
 		aktData->nazev = token.data;
 		aktData->def = false;
+		aktData->ramec = 0;
 
 		TRPInsert(aktTab, token.data, aktData);
 
@@ -526,7 +1044,9 @@ tError s_stat(){
 			return error;
 		}
 
-		error = s_def();
+		if (token.stav != S_STREDNIK){
+			error = s_exp();
+		}	
 		if (error != ERR_OK){
 			return error;
 		}
@@ -553,12 +1073,39 @@ tError s_stat(){
 			return ERR_SYN;
 		}
 
+		if (aktTab == NULL){
+			aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+			if (error != ERR_OK){
+				return error;
+			}
+			TRPInit(aktTab);
+			ramec_check = 3;
+		}
+
+		if (TRPSearch(aktTab, token.data) != NULL){
+			return ERR_SEM_NEDEF;
+		}
+
+		tData *aktData = newMalloc(sizeof(struct tdata));
+		if (error != ERR_OK){
+			return error;
+		}
+
+		aktData->typ = 2;
+		aktData->nazev = token.data;
+		aktData->def = false;
+		aktData->ramec = 0;
+
+		TRPInsert(aktTab, token.data, aktData);
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		error = s_def();
+		if (token.stav != S_STREDNIK){
+			error = s_exp();
+		}		
 		if (error != ERR_OK){
 			return error;
 		}
@@ -585,12 +1132,39 @@ tError s_stat(){
 			return ERR_SYN;
 		}
 
+		if (aktTab == NULL){
+			aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+			if (error != ERR_OK){
+				return error;
+			}
+			TRPInit(aktTab);
+			ramec_check = 3;
+		}
+
+		if (TRPSearch(aktTab, token.data) != NULL){
+			return ERR_SEM_NEDEF;
+		}
+
+		tData *aktData = newMalloc(sizeof(struct tdata));
+		if (error != ERR_OK){
+			return error;
+		}
+
+		aktData->typ = 3;
+		aktData->nazev = token.data;
+		aktData->def = false;
+		aktData->ramec = 0;
+
+		TRPInsert(aktTab, token.data, aktData);
+
 		token = getToken();
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
 
-		error = s_def();
+		if (token.stav != S_STREDNIK){
+			error = s_exp();
+		}	
 		if (error != ERR_OK){
 			return error;
 		}
@@ -622,7 +1196,9 @@ tError s_stat(){
 			return error;
 		}
 
-		error = s_def();
+		if (GFind (&global, token.data)){
+			error = s_arg();
+		} else error = s_exp();
 		if (error != ERR_OK){
 			return error;
 		}
@@ -640,14 +1216,10 @@ tError s_stat(){
 	
 	} else if (token.stav == S_CIN){/////////////////////////////////////////////////////////////////////////////
 
-		pomTab = aktTab;
 		if (aktTab != NULL){
 			TSInsertLast (&tabulkaSymbolu, aktTab);
 			char *pom;
-			pom = newFrame(halda, aktTab, isBoss);
-			if (isBoss){
-				isBoss = false;
-			}
+			pom = newFrame(halda, aktTab, ramec_check);
 
 			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
 			ILInsertLast(&pomPaska, aktInstrukce);
@@ -681,10 +1253,7 @@ tError s_stat(){
 		if (aktTab != NULL){
 			TSInsertLast (&tabulkaSymbolu, aktTab);
 			char *pom;
-			pom = newFrame(halda, aktTab, isBoss);
-			if (isBoss){
-				isBoss = false;
-			}
+			pom = newFrame(halda, aktTab, ramec_check);
 
 			aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
 			ILInsertLast(&pomPaska, aktInstrukce);
@@ -716,7 +1285,7 @@ tError s_stat(){
 	} else return error; /////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
-tError s_else(){
+tError s_else(char *pomIE){
 
 	if (error != ERR_OK){
 		return error;
@@ -734,6 +1303,16 @@ tError s_else(){
 	if (token.stav != S_SLZ){
 		return ERR_SYN;
 	}
+
+	aktTab = (tTabulka *) newMalloc(sizeof(tTabulka));
+		if (error != ERR_OK){
+			return error;
+		}
+	TRPInit(aktTab);
+	ramec_check = 2;
+
+	aktInstrukce = newInstr(I_ELSE, pomIE, NULL, NULL);
+	ILInsertLast(&pomPaska, aktInstrukce);
 
 	token = getToken();
 	if (token.stav == S_CHYBAVS){
@@ -754,100 +1333,25 @@ tError s_else(){
 		return error;
 	}
 
+	if (aktTab != NULL){
+		TSInsertLast (&tabulkaSymbolu, aktTab);
+		char *pom;
+		pom = newFrame(halda, aktTab, ramec_check);
+
+		aktInstrukce = newInstr(I_PUSH_FRAME, pom, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+		aktTab = NULL;
+	}
+
+	aktInstrukce = newInstr(I_POP_FRAME, NULL, NULL, NULL);
+	ILInsertLast(&pomPaska, aktInstrukce);
+
+	aktInstrukce = newInstr(I_IFELSE, pomIE, NULL, NULL);
+	ILInsertLast(&pomPaska, aktInstrukce);
+
 	return s_stat();
 
-}
-
-tError s_def(){
-
-	if (error != ERR_OK){
-		return error;
-	}
-
-	if (token.stav == S_STREDNIK && for_check == false){
-
-		return error;
-
-	} else if (token.stav == S_STREDNIK && for_check == true){
-
-		return error;
-
-	} else if (token.stav == S_SPZ && for_check == true){
-
-		return error;
-
-	} else return s_prir();
-}
-
-tError s_prir(){
-
-	if (error != ERR_OK){
-		return error;
-	}
-
-	if (token.stav != S_PRIR){
-		return ERR_SYN;
-	}
-
-	token = getToken();
-	if (token.stav == S_CHYBAVS){
-		return error;
-	}
-
-	if (token.stav == S_IDENT){
-
-		//prohledat tabulku, pokud je funkce, tak pokracuj, jinak EXP
-
-		//verze pro test
-
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-
-		if (token.stav == S_LZ){
-
-			token = getToken();
-			if (token.stav == S_CHYBAVS){
-				return error;
-			}
-
-			error = s_arg();
-			if (error != ERR_OK){
-				return error;
-			}
-
-			if (token.stav != S_PZ){
-				return ERR_SYN;
-			}
-
-			token = getToken();
-			if (token.stav == S_CHYBAVS){
-				return error;
-			}
-
-			return error;
-
-		} else if (token.stav == S_STREDNIK && for_check){
-
-			return error;
-
-		} else if (token.stav == S_STREDNIK && for_check == false){
-
-			/*token = getToken();
-			if (token.stav == S_CHYBAVS){
-				return error;
-			}*/
-
-			return error;
-
-		} else if (token.stav == S_PZ && for_check){
-
-			return error;
-
-		} else return s_exp();
-
-	} else return s_exp();
 }
 
 tError s_exp(){
@@ -858,8 +1362,11 @@ tError s_exp(){
 
 	//verze pro test
 
+	/*aktInstrukce = newInstr(I_EXP_LAST, NULL, NULL, NULL);
+	ILInsertLast(&pomPaska, aktInstrukce);
+
 	if (token.stav == S_STREDNIK || token.stav == S_PZ){
-		return ERR_SYN;
+		return ERR_SYN;  //pozor na prazdny vyraz, potreba vyresit!!!
 	}
 
 	while (1){
@@ -874,7 +1381,9 @@ tError s_exp(){
 		if (token.stav == S_CHYBAVS){
 			return error;
 		}
-	}
+	}*/
+
+
 
 	/*if (token.stav != S_TYPINT){
 		return ERR_SYN;
@@ -904,22 +1413,28 @@ tError s_param(){
 		return error;
 	}
 
-	if (token.stav != S_INT &&
-		token.stav != S_DOUBLE &&
-		token.stav != S_STRING &&
-		token.stav != S_AUTO){
+	// ulozim si typ parametru
 
-		return ERR_SYN;
-	}
+	int typPar;
+
+	if (token.stav == S_INT) typPar = 1;
+	else if (token.stav == S_DOUBLE) typPar = 2;
+	else if (token.stav == S_STRING) typPar = 3;
+	else return ERR_SYN;
 
 	token = getToken();
 	if (token.stav == S_CHYBAVS){
 		return error;
 	}
 
+	// vlozim parametr do seznamu
+
 	if (token.stav != S_IDENT){
 		return ERR_SYN;
 	}
+
+	PInit(&pomParametry);
+	PInsertLast (&pomParametry, typPar, token.data);
 
 	token = getToken();
 	if (token.stav == S_CHYBAVS){
@@ -944,22 +1459,27 @@ tError s_param2(){
 		return error;
 	}
 
-	if (token.stav != S_INT &&
-		token.stav != S_DOUBLE &&
-		token.stav != S_STRING &&
-		token.stav != S_AUTO){
+	// ulozim si typ parametru
 
-		return ERR_SYN;
-	}
+	int typPar;
+
+	if (token.stav == S_INT) typPar = 1;
+	else if (token.stav == S_DOUBLE) typPar = 2;
+	else if (token.stav == S_STRING) typPar = 3;
+	else return ERR_SYN;
 
 	token = getToken();
 	if (token.stav == S_CHYBAVS){
 		return error;
 	}
 
+	// vlozim parametr do seznamu
+
 	if (token.stav != S_IDENT){
 		return ERR_SYN;
 	}
+
+	PInsertLast (&pomParametry, typPar, token.data);
 
 	token = getToken();
 	if (token.stav == S_CHYBAVS){
@@ -975,39 +1495,34 @@ tError s_arg(){
 		return error;
 	}
 
-	if (token.stav == S_IDENT){
+	PInit(&pomParametry);
 
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+	if (token.stav == S_IDENT){
+		
+		PInsertArg (&pomParametry, 0, token.data, 0, 0, NULL);
 
 	} else if (token.stav == S_TYPINT){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		int x = atoi(token.data);
+		PInsertArg (&pomParametry, 1, NULL, x, 0, NULL);
 		
 	} else if (token.stav == S_TYPDOUBLE){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		double y;
+		sscanf(token.data, "%lf", &y);
+		PInsertArg (&pomParametry, 2, NULL, 0, y, NULL);
 		
 	} else if (token.stav == S_TYPSTRING){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		PInsertArg (&pomParametry, 3, NULL, 0, 0, token.data);
 		
 	} else return ERR_SYN;
+
+	token = getToken();
+	if (token.stav == S_CHYBAVS){
+		return error;
+	}
+	return s_arg2();
 }
 
 tError s_arg2(){
@@ -1026,38 +1541,31 @@ tError s_arg2(){
 	}
 
 	if (token.stav == S_IDENT){
-
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		
+		PInsertArg (&pomParametry, 0, token.data, 0, 0, NULL);
 
 	} else if (token.stav == S_TYPINT){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		int x = atoi(token.data);
+		PInsertArg (&pomParametry, 1, NULL, x, 0, NULL);
 		
 	} else if (token.stav == S_TYPDOUBLE){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		double y;
+		sscanf(token.data, "%lf", &y);
+		PInsertArg (&pomParametry, 2, NULL, 0, y, NULL);
 		
 	} else if (token.stav == S_TYPSTRING){
 		
-		token = getToken();
-		if (token.stav == S_CHYBAVS){
-			return error;
-		}
-		return s_arg2();
+		PInsertArg (&pomParametry, 3, NULL, 0, 0, token.data);
 		
 	} else return ERR_SYN;
+
+	token = getToken();
+	if (token.stav == S_CHYBAVS){
+		return error;
+	}
+	return s_arg2();
 
 }
 
@@ -1111,9 +1619,19 @@ tError s_cout(){
 		aktInstrukce = newInstr(I_COUT, token.data, NULL, NULL);
 		ILInsertLast(&pomPaska, aktInstrukce);
 
-	/*} else if (token.stav == S_TYPINT){
+	} else if (token.stav == S_TYPINT){
 
-	} else if (token.stav == S_TYPDOUBLE){*/
+		char *pom = newInt(halda, token.data);
+
+		aktInstrukce = newInstr(I_COUT, pom, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
+
+	} else if (token.stav == S_TYPDOUBLE){
+
+		char *pom = newDouble(halda, token.data);
+
+		aktInstrukce = newInstr(I_COUT, pom, NULL, NULL);
+		ILInsertLast(&pomPaska, aktInstrukce);
 
 	} else if (token.stav == S_TYPSTRING){
 
@@ -1205,7 +1723,7 @@ tError s_cout2(){
 
 //funkce pro ukladani do TS
 
-char *newFrame(tTabulka* halda, tTabulka *newItem, bool boss){
+char *newFrame(tTabulka* halda, tTabulka *newItem, int ramec){
   
 	char *key;
 	key = generateVar();
@@ -1215,23 +1733,38 @@ char *newFrame(tTabulka* halda, tTabulka *newItem, bool boss){
 	dataFrame->nazev = key;
 	dataFrame->typ = 5;
 	dataFrame->def = true;
-	dataFrame->boss = boss;
+	dataFrame->ramec = ramec;
 	
 	TRPInsert(halda, key, dataFrame);
 	
 	return key;
 }
 
-char *newStr(tTabulka* halda, char *hodnota){
+char *newArgs(tTabulka* halda, tParamElemPtr newItem){
   
 	char *key;
 	key = generateVar();
 	tData *dataFrame = newMalloc(sizeof(tData));
-	dataFrame->hodnota = newMalloc((strlen(key)+1)*sizeof(char));
-	dataFrame->hodnota->s = hodnota;
-	dataFrame->typ = 3;
+	dataFrame->hodnota = (void *) newMalloc(sizeof(struct tParamElem));
+	dataFrame->hodnota->args = newItem;
+	dataFrame->nazev = key;
+	dataFrame->typ = 6;
 	dataFrame->def = true;
-	dataFrame->boss = false;
+	dataFrame->ramec = 0;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+char *newLabel(tTabulka* halda){
+
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	dataFrame->typ = 4;
+	dataFrame->def = true;
+	dataFrame->ramec = 0;
 	
 	TRPInsert(halda, key, dataFrame);
 	

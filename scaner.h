@@ -1,7 +1,7 @@
 #ifndef SCANER_H_LEX
 #define SCANER_H_LEX
 
-#include <ctype.h>                 
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -26,9 +26,11 @@ typedef enum
     //S_CHYBABE,      //  5 CHYBA ZA BEHU
 
     // DATOVE TYPY
-    S_TYPDOUBLE = 6,//  6
-    S_TYPINT,       //  7
-    S_TYPSTRING,    //  8
+    S_TYPDOUBLE = 5,//  5
+    S_TYPINT,       //  6
+    S_TYPSTRING,    //  7
+    S_TYPSTRINGD,   //  8
+    S_TYPSTRINGX,   //  9
 
     //KLICOVA SLOVA
     S_AUTO = 10,    // 10 AUTO
@@ -44,41 +46,40 @@ typedef enum
 
     //ZNAKY
     S_CARKA,        // 20 ,
-    S_KOMENT,       // 21 // + KOMENTAR DO KONCE RADKU
-    S_LKOM,         // 22 /* + ZACATEK BLOKU KOMENTARU
-    S_PKOM,         // 23 */ KONEC BLOKU KOMENTARU
-    S_LPRIR,        // 24 <<
-    S_PPRIR,        // 25 >>
-    S_TECKA,        // 26 .     PRO DESETINNA CISLA
-    S_STREDNIK,     // 27 ;
-    S_LZ,           // 28 (
-    S_PZ,           // 29 )
-    S_SLZ,          // 30 {
-    S_SPZ,          // 31 }
+    S_LKOM,         // 21 /* + ZACATEK BLOKU KOMENTARU
+    S_PKOM,         // 22 */ KONEC BLOKU KOMENTARU
+    S_LPRIR,        // 23 <<
+    S_PPRIR,        // 24 >>
+    S_TECKA,        // 25 .     PRO DESETINNA CISLA
+    S_STREDNIK,     // 26 ;
+    S_LZ,           // 27 (
+    S_PZ,           // 28 )
+    S_SLZ,          // 29 {
+    S_SPZ,          // 30 }
 
     //POMOCNE STAVY
-    S_DPOM,         // 32 DOUBLE JAKO DESETINNE CISLO
-    S_DEXP,         // 33 DOUBLE JAKO EXPONENT
-    S_DEXP1,        // 34
-    S_DEXPP,        // 35 DOUBLE JAKO EXPONENT POMOCNY
-    S_DPOM2,  		// 36 PRO HEXADECIMALNI CISLA
-    S_KOMENTP,      // 37 ZJISTI OBSAH RDKOVEHO KOMENTARE
+    S_DPOM,         // 31 DOUBLE JAKO DESETINNE CISLO
+    S_DEXP,         // 32 DOUBLE JAKO EXPONENT
+    S_DEXP1,        // 33
+    S_DEXPP,        // 34 DOUBLE JAKO EXPONENT POMOCNY
+    S_DPOM2,  		// 35 PRO HEXADECIMALNI CISLA
+    S_KOMENTP,      // 36 ZJISTI OBSAH RDKOVEHO KOMENTARE
+    S_TYPSTRINGZ,      // 37
+    S_TYPSTRINGA,      // 38
 
     //MATEMATICKE OPERACE
     S_ADD = 40,     // 40 +
-    S_DEK,          // 41 --
-    S_DIV,          // 42 /
-    S_INK,          // 43 ++
-    S_MEN,          // 44 <
-    S_MUL,          // 45 *
-    S_PRIR,         // 46 =
-    S_ROV,          // 47 ==
-    S_NEROV,        // 48 !=
-    S_MENROV,       // 49 <=
-    S_VECROV,       // 50 >=
-    S_SUB,          // 51 -
-    S_VEC,          // 52 >
-    S_VYKR,         // 53 !  NEBO NEGACE
+    S_DIV,          // 41 /
+    S_MEN,          // 42 <
+    S_MUL,          // 43 *
+    S_PRIR,         // 44 =
+    S_ROV,          // 45 ==
+    S_NEROV,        // 46 !=
+    S_MENROV,       // 47 <=
+    S_VECROV,       // 48 >=
+    S_SUB,          // 49 -
+    S_VEC,          // 50 >
+    S_VYKR,         // 51 ! 
 
     S_EOF = 60      // 60 EOF
 } tStav;
@@ -106,4 +107,12 @@ extern tToken token;
 tToken getToken();  // VRATI TOKEN
 void setFile (FILE *f);
 
+/*static void vlozZnak(int znak, int *pocitadlo);
+static void vloztStav(tStav stav);
+static void vratZnak(int znak, FILE* soubor);
+static tStav zjistiIdent (char *slovo);
+//int esc(int c, tStav stav);*/
+
 #endif /* SCANER_H_LEX */
+
+
