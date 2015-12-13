@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "scaner.h"   // NAS HLAVICKOVY SOUBOR
 
 /*
@@ -71,11 +86,6 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
    token.stav = S_START;
    token.data = NULL;
 
-   /*
-    * OTEVRENI SOUBORU
-    */
-
-    //soubor = fopen("txt.txt", "r");
 
    /*
     * BEH AUTOMATU
@@ -288,6 +298,9 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
         {
             if(c=='\n'){
                 stav = S_START;
+            } else if (c == EOF){
+                stav = S_START;
+                vratZnak(c,soubor);
             }
         break;
         }
@@ -296,6 +309,8 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
         {
             if (c=='*'){
                 stav = S_PKOM;
+            } else if (c == EOF){
+                stav = S_CHYBAVS;
             }
         break;
         }
@@ -307,6 +322,8 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
             }
             else if (c=='*'){
                 stav = S_PKOM;
+            } else if (c == EOF){
+                stav = S_CHYBAVS;
             }
             else {
                 stav = S_LKOM;
@@ -378,8 +395,13 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
         case S_TYPSTRINGZ:{
             if (c == '\\'){
                 stav = S_TYPSTRINGD;
+            } else if ((c == '"') && (token.data == NULL)){
+                vlozZnak(0, &pocitadlo);
+                stav = S_TYPSTRING;
             } else if (c == '"'){
                 stav = S_TYPSTRING;
+            } else if (c==EOF){
+                stav = S_CHYBAVS;
             } else {  
                 vlozZnak(c, &pocitadlo);
             }
@@ -431,6 +453,12 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
                 else if (pomZnak == '7') pomVypocet = 112;
                 else if (pomZnak == '8') pomVypocet = 128;
                 else if (pomZnak == '9') pomVypocet = 144;
+                else if (pomZnak == 'a' || pomZnak == 'A') pomVypocet = 160;
+                else if (pomZnak == 'b' || pomZnak == 'B') pomVypocet = 176;
+                else if (pomZnak == 'c' || pomZnak == 'C') pomVypocet = 192;
+                else if (pomZnak == 'd' || pomZnak == 'D') pomVypocet = 208;
+                else if (pomZnak == 'e' || pomZnak == 'E') pomVypocet = 224;
+                else if (pomZnak == 'f' || pomZnak == 'F') pomVypocet = 240;
 
                 if (c == '0') pomVypocet = pomVypocet + 0;
                 else if (c == '1') pomVypocet = pomVypocet + 1;
@@ -442,6 +470,12 @@ tToken getToken() // NENI STATIC PROTOZE NEPOTREBUJEME ABY SI PAMATOVALA SVE PRO
                 else if (c == '7') pomVypocet = pomVypocet + 7;
                 else if (c == '8') pomVypocet = pomVypocet + 8;
                 else if (c == '9') pomVypocet = pomVypocet + 9;
+                else if (c == 'a' || c == 'A') pomVypocet = pomVypocet + 10;
+                else if (c == 'b' || c == 'B') pomVypocet = pomVypocet + 11;
+                else if (c == 'c' || c == 'C') pomVypocet = pomVypocet + 12;
+                else if (c == 'd' || c == 'D') pomVypocet = pomVypocet + 13;
+                else if (c == 'e' || c == 'E') pomVypocet = pomVypocet + 14;
+                else if (c == 'f' || c == 'F') pomVypocet = pomVypocet + 15;
                 vlozZnak(pomVypocet, &pocitadlo);
                 pomVypocet = 0;
                 stav = S_TYPSTRINGZ;
@@ -590,92 +624,3 @@ static tStav zjistiIdent(char *slovo){
     }
     return pomstav;
 }
-
-/*int esc(int c, tStav stav)
-  {
-  int y = 0, x = 0;
-  while (stav != S_KONEC)
-  {
-    if (y == 1)
-    {
-    c = getc(soubor)
-    }
-    switch (stav)
-      case S_TYPSTRING:
-        {
-        switch(c)
-            case '"':
-            {
-                vlozZnak(c, '\0');
-                stav = S_KONEC;
-            }break;
-            case '\\':
-                {
-                vlozZnak(c, &pocitadlo);
-                stav = S_TYPSTRINGD;
-                y = 1;
-                }break;
-
-            default:
-            {
-                vloztStav(stav);
-                stav = S_TYPSTRING;
-                y = 1;
-            }
-            break;
-        }break;
-       case S_TYPSTRINGD:
-            {
-            switch(c)
-            case 't':
-                {
-                vlozZnak(c, &pocitadlo);
-                stav = S_TYPSTRINGD;
-                }break;
-            case 'n':
-                {
-                vlozZnak(c, &pocitadlo);
-                stav = S_TYPSTRINGD;
-                }break;
-
-            case '\\':
-                {
-                vlozZnak(c, &pocitadlo);
-                stav = S_TYPSTRINGD;
-                }break;
-            case: 'x'
-                {
-                stav = S_TYPSTRINGX
-                }
-            default:
-                {
-                vloztStav(stav);
-                stav = S_TYPSTRING;
-                }
-            }break;
-    case S_TYPSTRINGX:
-    {
-        if (x = 2)
-        {
-        stav = S_TYPSTRING;
-        vloztStav(stav);
-        y = 1
-        break;
-        }
-        else if (c == 'a-f' || c == 'A-F' || c == '0-9')
-        (
-            vlozZnak(c, &pocitadlo);
-            stav = S_TYPSTRINGX;
-            x++
-        )
-        else
-        (
-            vloztStav(stav);
-            stav = S_TYPSTRING;
-        )
-        y = 1
-        }break;
-    }
-    return stav;
-}
-*/

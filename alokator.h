@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #ifndef ALOKATOR_H_GARBAGE
 #define ALOKATOR_H_GARBAGE
 
@@ -11,6 +26,7 @@ typedef struct AllocStruct
     void *nextStruct;
 } tAllocStruct, *ptrAllocStruct;
 
+// vycet chybovych stavu
 typedef enum {
 	ERR_OK,				//0
 	ERR_LEX,			//1

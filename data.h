@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #ifndef DATA_H_STRUKTURY
 #define DATA_H_STRUKTURY
 
@@ -33,7 +48,7 @@ typedef enum {
 	I_MENROV,			//19
 	I_ROV,				//20
 	I_NEROV,			//21
-	I_EXP_LAST,			//22
+	I_EXP,				//22
 	I_RETURN,			//23
 	I_FOR_VYRAZ,		//24
 	I_FOR_START,		//25
@@ -41,6 +56,11 @@ typedef enum {
 	I_KONEC_FUNKCE,		//27
 	I_FUNKCE,			//28
 	I_START_FUNKCE,		//29
+	I_LENGTH,			//30
+	I_SUBSTR,			//31
+	I_CONCAT,			//32
+	I_FIND,				//33
+	I_SORT,				//34
 } tITyp;
 
 typedef struct {

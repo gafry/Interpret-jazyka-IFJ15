@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #ifndef VYRAZY_H_EXP
 #define VYRAZY_H_EXP
 
@@ -41,10 +56,10 @@ typedef enum
 const tTab precedencni_tabulka[RADKY][SLOUPCE];
 
 typedef struct tSAData {
-	int znamenko;
+	int znamenko; //rika, jestli je nad znakem "<" nebo neni
 	char *nazev;
 	tTabOperace typ;
-	bool E;
+	bool E;		//rika, jestli to id nebo E
 } *tSADataPtr;
 
 typedef struct tPrvek {
@@ -70,10 +85,12 @@ void VClear(tZasobnik *zasobnik);
 
 tSADataPtr findNonE (tZasobnik *zasobnik);
 tPrvekPtr findSth (tZasobnik *zasobnik, tTabOperace typ);
-void makeInstr (tZasobnik *zasobnik);
+void makeInstr (tZasobnik *zasobnik, int i);
 
 char *newInt(tTabulka* halda, char *hodnota);
+char *newInt2(tTabulka* halda, int hodnota);
 char *newDouble(tTabulka* halda, char *hodnota);
+char *newDouble2(tTabulka* halda, double hodnota);
 char *newStr(tTabulka* halda, char *hodnota);
 char *newUnkown(tTabulka* halda);
 

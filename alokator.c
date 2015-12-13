@@ -1,18 +1,37 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "alokator.h"
 
 ptrAllocStruct firstStruct;
 ptrAllocStruct lastStruct;
+tError error;
 
+// alokuje pamet
 void *newMalloc(int size)
 {
-	ptrAllocStruct record = malloc(sizeof(struct AllocStruct));
-	if (record == NULL)	{
+	void *dataAlloc = NULL;
+	dataAlloc = malloc(size);
+	if (dataAlloc == NULL) {
 		error = ERR_INTER;
 		return NULL;
 	}
-
-	void *dataAlloc = (void*) malloc(size);
-	if (dataAlloc == NULL) {
+	
+	ptrAllocStruct record = NULL;
+	record = malloc(sizeof(struct AllocStruct));
+	if (record == NULL)	{
 		error = ERR_INTER;
 		return NULL;
 	}
@@ -35,6 +54,7 @@ void *newMalloc(int size)
 	return dataAlloc;
 }
 
+//realokuje pamet
 void *newRealloc(void *adr, int size)
 {
 	void *record = NULL;
@@ -50,6 +70,7 @@ void *newRealloc(void *adr, int size)
 	}
 }
 
+// pomocna funkce
 void diffMem(void *record, int size, void *toBeDestroyed) 
 {
 	seekAndDestroy(toBeDestroyed);
@@ -76,6 +97,7 @@ void diffMem(void *record, int size, void *toBeDestroyed)
 	}
 }
 
+//pomocna funkce
 void seekAndDestroy(void *toBeDestroyed) 
 {
 	ptrAllocStruct record = firstStruct;
@@ -91,6 +113,7 @@ void seekAndDestroy(void *toBeDestroyed)
 	}
 }
 
+//uvolni veskerou pamet
 void killThemAll() 
 {
 	ptrAllocStruct record = NULL;

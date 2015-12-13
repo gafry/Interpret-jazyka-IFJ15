@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "stack.h"
 
 tTabulka *halda;
@@ -12,6 +27,7 @@ int ZEmpty(tStack *zasobnik) {
 	return (zasobnik->vrchol == NULL) ? 1 : 0;
 }
 
+// pushne na vrchol
 void ZPush(tStack *zasobnik, tTabulka *tab, int ramec) {
 
 	struct tStackPrvek *newItem;
@@ -33,6 +49,7 @@ void ZPush(tStack *zasobnik, tTabulka *tab, int ramec) {
 	zasobnik->vrchol = newItem;
 }
 
+// popne vrchol
 void ZPop(tStack *zasobnik, int i) {
 
 	if (!(ZEmpty(zasobnik))) {
@@ -52,6 +69,7 @@ void ZPop(tStack *zasobnik, int i) {
 	}
 }
 
+//vyhleda promennou
 tTRPPolozka *ZSearch(tStack *zasobnik, char *nazev) {
 
 	tTRPPolozka *pom;
@@ -79,6 +97,7 @@ tTRPPolozka *ZSearch(tStack *zasobnik, char *nazev) {
 	return pom;
 }
 
+// vyhleda promennou i pod ramcem 1
 tTRPPolozka *ZRekurzeSearch(tStack *zasobnik, char *nazev) {
 
 	tTRPPolozka *pom;
@@ -86,7 +105,7 @@ tTRPPolozka *ZRekurzeSearch(tStack *zasobnik, char *nazev) {
 	bool x = true;
 	bool y = true;
 
-	while (y){
+	while (y){ 
 		if (pom1->ramec == 1){
 			y = false;
 			pom1 = pom1->next;
@@ -96,7 +115,7 @@ tTRPPolozka *ZRekurzeSearch(tStack *zasobnik, char *nazev) {
 	while (x){
 		pom = TRPSearch(pom1->tab, nazev);
 
-		if (pom == NULL){
+		if (pom == NULL){ 
 			if (pom1->ramec != 1){
 				pom1 = pom1->next;
 			} else x = false;

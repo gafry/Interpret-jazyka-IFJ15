@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #ifndef SCANER_H_LEX
 #define SCANER_H_LEX
 
@@ -18,7 +33,7 @@ typedef enum
     //RIDICI STAVY
     S_START,        //  0 START
     S_KONEC,        //  1 KONEC
-    S_IDENT,        //  2 IDENTIFIK�TOR
+    S_IDENT,        //  2 IDENTIFIKÁTOR
     S_KLIC,         //  3 KLICOVA SLOVA
 
     //CHYBOVE STAVY

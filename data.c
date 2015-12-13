@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "data.h"
 
 //instrukce -------------------------------------------------------------------------------------------------
@@ -176,12 +191,12 @@ void PInit (tParamList *P){
 bool PCheck (tParamElemPtr par1, tParamElemPtr par2){
 
 	while(1){
-		if (par1 == NULL || par2 == NULL){
-			if (par1 != par2){
-				return false;
-			}
-		} else {
-			if ((par1->data->typ != par2->data->typ) || (par1->data->nazev != par2->data->nazev)){
+		if (par1 == NULL && par2 == NULL){ 
+			return true;
+		} else if (par1 == NULL || par2 == NULL){
+			return false;
+		} else { 
+			if ((par1->data->typ != par2->data->typ) || strcmp(par1->data->nazev, par2->data->nazev)){
 				return false;
 			} else {
 				par1 = par1->rptr;
@@ -199,7 +214,7 @@ void PInsertTab (tParamElemPtr par, tTabulka *tab){
 		}
 
 		TRPInsert(tab, par->data->nazev, par->data);
-		par = par->lptr;
+		par = par->rptr;
 	}
 }
 

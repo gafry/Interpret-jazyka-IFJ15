@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "vyrazy.h"
 
 tZasobnik PAZasobnik;
@@ -30,9 +45,16 @@ const tTab precedencni_tabulka[RADKY][SLOUPCE]=
 	/*$*/	{M, M, M, M, M, M, M, M, M, M, M, C, M, C},
 };
 
+//V vyssi priorita
+//M nizsi priorita
+//R stejna priorita
+//C chyba syntaxe
+//ID promenna nebo konstanta
+
 tError expr(char **last){
 
-	int i = 0;	
+	int i = 0;
+	int id = 0;	
 
 	VInit(&PAZasobnik);
 
@@ -48,6 +70,7 @@ tError expr(char **last){
 		dataToken = ResolveToken(token, i);
 		if (error != ERR_OK) return error;
 		i++;
+		if (dataToken->typ == ID) id++;
 
 		dataZasobnik = findNonE (&PAZasobnik);
 
@@ -55,25 +78,29 @@ tError expr(char **last){
 
 		switch(precedencni_tabulka[dataZasobnik->typ][dataToken->typ]){
 
+			/* pripad vyssi - pokud je id, tak provedu id->E, jinak
+			   vytvorim instrukci */
+
 			case V:
 
 				if (dataZasobnik->typ == ID && dataZasobnik->znamenko == 1){ 
 					dataZasobnik->znamenko = 0;
 					dataZasobnik->E = true;
 				} else {
-					makeInstr (&PAZasobnik);
+					makeInstr (&PAZasobnik, 0);
 				}
 				break;
 
 			case M:
 
-				if (dataToken->typ == ID){  
+				if (dataToken->typ == ID){   // zjistí jestli typ je proměnná nebo
 					dataToken->znamenko = 1;
+					if (PAZasobnik.vrchol->data->typ == ID) return ERR_SYN;
 					VPush(&PAZasobnik, dataToken);					
-				} else if (dataZasobnik->typ == DOLAR){ 
-					pomZasobnik = findSth (&PAZasobnik, DOLAR);
-					if (pomZasobnik->lptr != NULL){
-						if (pomZasobnik->lptr->data->E == true){
+				} else if (dataZasobnik->typ == DOLAR){   // jestli jsme na dně zásobníku
+					pomZasobnik = findSth (&PAZasobnik, DOLAR);  // najde konec zásobníku
+					if (pomZasobnik->lptr != NULL){  // pokun pozice nad tázaným prvkem není prázdná 
+						if (pomZasobnik->lptr->data->E == true){  // tak změt ID  na E
 							pomZasobnik->lptr->data->znamenko = 1;
 						} else {
 							if (pomZasobnik->lptr->data->typ != LKULZAV){
@@ -84,9 +111,9 @@ tError expr(char **last){
 						if (dataToken->typ != LKULZAV) return ERR_SYN;
 					}
 					VPush(&PAZasobnik, dataToken);
-				} else if (dataZasobnik->typ == LKULZAV && dataZasobnik->typ == LKULZAV){ 
-					pomZasobnik = findSth (&PAZasobnik, dataZasobnik->typ);
-					if (pomZasobnik->lptr != NULL){
+				} else if (dataZasobnik->typ == LKULZAV && dataZasobnik->typ == LKULZAV){  // jestli je na zásobníku "(" a příchozí znak je "("
+					pomZasobnik = findSth (&PAZasobnik, dataZasobnik->typ);  // najde místo kde se nachazí zadaný typ
+					if (pomZasobnik->lptr != NULL){		//nastavi potrebne
 						if (pomZasobnik->lptr->data->E){
 							pomZasobnik->lptr->data->znamenko = 1;
 						} else if (pomZasobnik->rptr->data->E){
@@ -113,9 +140,10 @@ tError expr(char **last){
 				if (error != ERR_OK) return error;
 				break;
 
-			case R:
+			case R: //rovno
 
-				VPopZavorka(&PAZasobnik);
+				VPopZavorka(&PAZasobnik); //zrusi zavorky
+				if (error != ERR_OK) return error;
 
 				token = getToken();
 				if (error != ERR_OK) return error;
@@ -124,7 +152,15 @@ tError expr(char **last){
 
 			case C:
 
-				if (dataZasobnik->typ == DOLAR && dataToken->typ == DOLAR){
+				if (dataToken->typ == DOLAR && dataZasobnik->typ == DOLAR && id == 1){
+					makeInstr (&PAZasobnik, 1);
+					pomZasobnik = findSth (&PAZasobnik, DOLAR);
+					if (pomZasobnik->lptr->data->E){
+						*last = pomZasobnik->lptr->data->nazev;
+						VClear(&PAZasobnik);
+						return ERR_OK;
+					} else return ERR_SYN;
+				} else if (dataZasobnik->typ == DOLAR && dataToken->typ == DOLAR){
 					pomZasobnik = findSth (&PAZasobnik, DOLAR);
 					if (pomZasobnik->lptr->data->E){
 						*last = pomZasobnik->lptr->data->nazev;
@@ -137,7 +173,7 @@ tError expr(char **last){
 	}
 }
 
-tSADataPtr ResolveToken (tToken token, int i){
+tSADataPtr ResolveToken (tToken token, int i){   // funkce pro zjištění typu tokenu 
 
 	if (i == 0)
 	{
@@ -169,8 +205,8 @@ tSADataPtr ResolveToken (tToken token, int i){
 		error = ERR_SYN;
 		return NULL;
 	}
-
-	switch(token.stav)
+//printf("%d\n", token.stav);
+	switch(token.stav)   // kontrola prvního stavu
 	{
 		case S_ADD:
 				dataZasobnik->typ = PLUS;	// +
@@ -196,7 +232,7 @@ tSADataPtr ResolveToken (tToken token, int i){
 				dataZasobnik->typ = NEROVNASE;	// !=
 				break;
 
-		case S_MENROV:printf("%d\n", token.stav);
+		case S_MENROV:
 				dataZasobnik->typ = MENSIROVNO;	// <=
 				break;
 
@@ -265,7 +301,7 @@ tSADataPtr ResolveToken (tToken token, int i){
 	return dataZasobnik;
 }
 
-tSADataPtr findNonE (tZasobnik *zasobnik){
+tSADataPtr findNonE (tZasobnik *zasobnik){   // funkce přeskakuje na zásobníku prvky typu E
 
 	tPrvekPtr pom = zasobnik->vrchol;
 	while (1){
@@ -278,7 +314,7 @@ tSADataPtr findNonE (tZasobnik *zasobnik){
 	}
 }
 
-tPrvekPtr findSth (tZasobnik *zasobnik, tTabOperace typ){
+tPrvekPtr findSth (tZasobnik *zasobnik, tTabOperace typ){  // Vyhledá zadaný typ operace a vrátí její místo na zásobníku 
 
 	tPrvekPtr pom = zasobnik->vrchol;
 	while (1){
@@ -290,7 +326,7 @@ tPrvekPtr findSth (tZasobnik *zasobnik, tTabOperace typ){
 	}
 }
 
-void makeInstr (tZasobnik *zasobnik){
+void makeInstr (tZasobnik *zasobnik, int i){  // funkce která vytváří instrukce 
 
 	char *name1;
 	char *name2;
@@ -302,67 +338,76 @@ void makeInstr (tZasobnik *zasobnik){
 		return ;
 	}
 	name1 = pom->data->nazev;
-	pom = pom->rptr;
-	if (pom->data->typ == DOLAR || pom->data->typ == ID || pom->data->typ == LKULZAV || pom->data->typ == PKULZAV){
-		error = ERR_SYN;
-		return ;
-	}
-	operace = pom->data->typ;
-	pom = pom->rptr;
-	if ((pom->data->E == false) || pom->data->znamenko == 0){
-		error = ERR_SYN;
-		return ;
-	}
-	name2 = pom->data->nazev;
-	name3 = newUnkown(halda);
 
-	if (operace == PLUS){
-		aktInstrukce = newInstr(I_ADD, name2, name1, name3);
+	if (i == 1){
+
+		aktInstrukce = newInstr(I_EXP, NULL, NULL, name1);
 		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == MINUS){
-		aktInstrukce = newInstr(I_SUB, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == KRAT){
-		aktInstrukce = newInstr(I_MUL, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == DELENO){
-		aktInstrukce = newInstr(I_DIV, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == VETSI){
-		aktInstrukce = newInstr(I_VET, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == MENSI){
-		aktInstrukce = newInstr(I_MEN, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == VETSIROVNO){
-		aktInstrukce = newInstr(I_VETROV, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == MENSIROVNO){
-		aktInstrukce = newInstr(I_MENROV, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == ROVNASE){
-		aktInstrukce = newInstr(I_ROV, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
-	} else if (operace == NEROVNASE){
-		aktInstrukce = newInstr(I_NEROV, name2, name1, name3);
-		ILInsertLast(&pomPaska, aktInstrukce);
+
 	} else {
-		error = ERR_SYN;
-		return ;
+
+		pom = pom->rptr;
+		if (pom->data->typ == DOLAR || pom->data->typ == ID || pom->data->typ == LKULZAV || pom->data->typ == PKULZAV){
+			error = ERR_SYN;
+			return ;
+		}
+		operace = pom->data->typ;
+		pom = pom->rptr;
+		if ((pom->data->E == false) || pom->data->znamenko == 0){
+			error = ERR_SYN;
+			return ;
+		}
+		name2 = pom->data->nazev;
+		name3 = newUnkown(halda);
+
+		if (operace == PLUS){
+			aktInstrukce = newInstr(I_ADD, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == MINUS){
+			aktInstrukce = newInstr(I_SUB, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == KRAT){
+			aktInstrukce = newInstr(I_MUL, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == DELENO){
+			aktInstrukce = newInstr(I_DIV, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == VETSI){
+			aktInstrukce = newInstr(I_VET, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == MENSI){
+			aktInstrukce = newInstr(I_MEN, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == VETSIROVNO){
+			aktInstrukce = newInstr(I_VETROV, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == MENSIROVNO){ 
+			aktInstrukce = newInstr(I_MENROV, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == ROVNASE){
+			aktInstrukce = newInstr(I_ROV, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else if (operace == NEROVNASE){
+			aktInstrukce = newInstr(I_NEROV, name2, name1, name3);
+			ILInsertLast(&pomPaska, aktInstrukce);
+		} else {
+			error = ERR_SYN;
+			return ;
+		}
+
+		dataZasobnik = newMalloc(sizeof(struct tSAData));
+		if (dataZasobnik == NULL) return ;
+
+		dataZasobnik->znamenko = 0;
+		dataZasobnik->nazev = name3;
+		dataZasobnik->typ = ID;
+		dataZasobnik->E = true;
+
+		VPop(zasobnik);
+		VPop(zasobnik);
+		VPop(zasobnik);
+		VPush(zasobnik, dataZasobnik);
 	}
-
-	dataZasobnik = newMalloc(sizeof(struct tSAData));
-	if (dataZasobnik == NULL) return ;
-
-	dataZasobnik->znamenko = 0;
-	dataZasobnik->nazev = name3;
-	dataZasobnik->typ = ID;
-	dataZasobnik->E = true;
-
-	VPop(zasobnik);
-	VPop(zasobnik);
-	VPop(zasobnik);
-	VPush(zasobnik, dataZasobnik);
 }
 
 void VInit(tZasobnik *zasobnik) {
@@ -400,9 +445,13 @@ void VPop(tZasobnik *zasobnik) {
 	}
 }
 
-void VPopZavorka(tZasobnik *zasobnik) {
+void VPopZavorka(tZasobnik *zasobnik) {  // jestli je výraz ve tvaru "(E)", tak smaže závorky a na zásobníku zůstane jenom "E"
 	if (!(VEmpty(zasobnik))) {
 		tPrvekPtr item = zasobnik->vrchol;
+		if (item->data->typ == LKULZAV){
+			error = ERR_SYN;
+			return;
+		}
 		item = item->rptr;
 		zasobnik->vrchol->rptr = item->rptr;
 		item->rptr->lptr = zasobnik->vrchol;
@@ -416,7 +465,7 @@ void VClear(tZasobnik *zasobnik) {
 	}
 }
 
-char *newInt(tTabulka* halda, char *hodnota){
+char *newInt(tTabulka* halda, char *hodnota){ //novy int z charu
   
 	char *key;
 	key = generateVar();
@@ -433,7 +482,23 @@ char *newInt(tTabulka* halda, char *hodnota){
 	return key;
 }
 
-char *newDouble(tTabulka* halda, char *hodnota){
+char *newInt2(tTabulka* halda, int hodnota){ //novy int
+  
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+	dataFrame->hodnota->i = hodnota;
+	dataFrame->typ = 1;
+	dataFrame->def = true;
+	dataFrame->ramec = 0;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+char *newDouble(tTabulka* halda, char *hodnota){ //novy double z charu
   
 	char *key;
 	key = generateVar();
@@ -451,12 +516,28 @@ char *newDouble(tTabulka* halda, char *hodnota){
 	return key;
 }
 
-char *newStr(tTabulka* halda, char *hodnota){
+char *newDouble2(tTabulka* halda, double hodnota){ //novy double
   
 	char *key;
 	key = generateVar();
 	tData *dataFrame = newMalloc(sizeof(tData));
-	dataFrame->hodnota = newMalloc((strlen(key)+1)*sizeof(char));
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
+	dataFrame->hodnota->d = hodnota;
+	dataFrame->typ = 2;
+	dataFrame->def = true;
+	dataFrame->ramec = 0;
+	
+	TRPInsert(halda, key, dataFrame);
+	
+	return key;
+}
+
+char *newStr(tTabulka* halda, char *hodnota){ //novy string
+  
+	char *key;
+	key = generateVar();
+	tData *dataFrame = newMalloc(sizeof(tData));
+	dataFrame->hodnota = newMalloc(sizeof(tHodnota));
 	dataFrame->hodnota->s = hodnota;
 	dataFrame->typ = 3;
 	dataFrame->def = true;
@@ -467,7 +548,7 @@ char *newStr(tTabulka* halda, char *hodnota){
 	return key;
 }
 
-char *newUnkown(tTabulka* halda){
+char *newUnkown(tTabulka* halda){ //nova neznama
   
 	char *key;
 	key = generateVar();

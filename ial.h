@@ -1,3 +1,18 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #ifndef IAL_H_TABULKADATA
 #define IAL_H_TABULKADATA
 
@@ -47,9 +62,10 @@ typedef struct tTRPpolozka {
 
 typedef tTRPPolozka *tTabulka[TRP_VELIKOST];
 
-extern int TRPVELIKOST;
-extern tTabulka *halda;
+extern int TRPVELIKOST; //velikost tabulky
+extern tTabulka *halda;	//pomocne promenne
 
+// funkce tabulky
 int hash(tKlic klic);
 void TRPInit(tTabulka *ptr);
 tTRPPolozka *TRPSearch(tTabulka *ptr, tKlic klic);
@@ -57,5 +73,9 @@ void TRPInsert(tTabulka *ptr, tKlic klic, tData *data);
 tData *TRPData(tTabulka *ptr, tKlic klic);
 void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty);
 void TRPDelete(tTabulka *tab);
+
+// shell sort a boyer-moore
+void shellSort(char *s1);
+int boyer_moore (char *s, char *search);
 
 #endif /* IAL_H_TABULKADATA */

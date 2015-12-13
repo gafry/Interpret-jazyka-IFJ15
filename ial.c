@@ -1,7 +1,23 @@
+/*
+ * Implementace interpretu imperativního jazyka IFJ15
+ *
+ * Zadání: https://wis.fit.vutbr.cz/FIT/st/course-files-st.php/course/IFJ-IT/projects/ifj2015.pdf
+ *
+ * Tým 094, varianta b/3/II:
+
+ * Jakub Menšík - vedoucí (xmensi03)
+ * Vojtěch Měchura (xmechu00)
+ * Matěj Moravec (xmorav32)
+ * Jan Morávek (xmorav33)
+ * Jan Svoboda (xsvobo0u)
+ *
+ */
+
 #include "ial.h"
 
 int TRPVELIKOST = TRP_VELIKOST;
 
+// hashovaci funkce
 int hash(tKlic klic) {
 	int pom = 1;
 	int delka = strlen(klic);
@@ -19,9 +35,9 @@ void TRPInit(tTabulka *ptr){
 			(*ptr) [i] = NULL;
 		}
 	}
-	//error
 }
 
+// vrati tTRPPolozku pro dany klic
 tTRPPolozka *TRPSearch(tTabulka *ptr, tKlic klic){
 	if (ptr != NULL){
 		tTRPPolozka *polozka = (*ptr) [hash(klic)];
@@ -40,6 +56,7 @@ tTRPPolozka *TRPSearch(tTabulka *ptr, tKlic klic){
 	}
 }
 
+// vlozi prvek do tabulky
 void TRPInsert(tTabulka *ptr, tKlic klic, tData *data){
 	if (ptr != NULL){
 		tTRPPolozka *polozka = TRPSearch(ptr, klic);
@@ -63,6 +80,7 @@ void TRPInsert(tTabulka *ptr, tKlic klic, tData *data){
 	}
 }
 
+// vrati tData pro dany klic
 tData *TRPData(tTabulka *ptr, tKlic klic){
 	tTRPPolozka *polozka = TRPSearch(ptr, klic);
 	if (polozka != NULL){
@@ -72,27 +90,13 @@ tData *TRPData(tTabulka *ptr, tKlic klic){
 	}
 }
 
-/*void TRPVynulluj(tTabulka *ptr){
-	if (ptr != NULL) { 
-		for (int i = 0; i < TRPVELIKOST; i++) {
-			tTRPPolozka *polozka = (*ptr)[i];
-			tTRPPolozka *pom;
-			while (polozka != NULL) {
-                pom = polozka;
-                polozka = polozka->next;
-				free(pom);
-			}
-            (*ptr)[i] = NULL;
-		}
-	}
-}*/
-
+// zkopiruje tabulku
 void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty){
-	if (tabFull != NULL) { 
-		for (int i = 0; i < TRPVELIKOST; i++) {
+	if (tabFull != NULL) {
+		for (int i = 0; i < TRPVELIKOST; i++) {  
 			tTRPPolozka *polozka = (*tabFull)[i];
 			tTRPPolozka *pom;
-			while (polozka != NULL) {
+			while (polozka != NULL) {  
                 pom = polozka;
                 polozka = polozka->next;				
 
@@ -109,6 +113,8 @@ void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty){
                 } else if (pom->data->typ == 3){
 					dataFrame->typ = 3;
 					dataFrame->hodnota->s = NULL;
+                } else if (pom->data->typ == 7){
+                	dataFrame->typ = 7;
                 }
 				dataFrame->nazev = pom->data->nazev;
 				dataFrame->def = false;
@@ -117,9 +123,10 @@ void TRPCopy(tTabulka *tabFull, tTabulka *tabEmpty){
 				TRPInsert(tabEmpty, pom->klic, dataFrame);
 			}
 		}
-	} //tTRPPolozka *x = TRPSearch(tabEmpty, "a"); printf("%s\n", x->data->nazev);
+	}
 }
 
+// NULL tabulky
 void TRPDelete(tTabulka *tab){
 	if (tab != NULL) { 
 		for (int i = 0; i < TRPVELIKOST; i++) {
@@ -140,9 +147,10 @@ void TRPDelete(tTabulka *tab){
 	}
 }
 
-/*char *shellSort(char *s1){
-	char pom;
-	int x, i, w, c, next;
+void shellSort(char *s1){
+	char pom = NULL;
+	int x, i, c, next;
+	int w;
 	x = strlen(s1);
 	x = x/2;
 	c = x;
@@ -150,7 +158,7 @@ void TRPDelete(tTabulka *tab){
 
 	while(1) {
 		w = i;
-		while (1){
+		while (1) {
 			if (w < 0){
 				w = w + (x - i);
 				pom = s1[w];
@@ -159,9 +167,8 @@ void TRPDelete(tTabulka *tab){
 				continue;
 			}
 			if (s1[w] > s1[x]){
-				w = w - (x - i);
-			}
-			else {
+			w = w - (x - i);
+			} else {
 				w = w + (x - i);
 				if ((x - w) == 0) break;
 				else if (s1[w] > s1[x]){
@@ -177,9 +184,11 @@ void TRPDelete(tTabulka *tab){
 			}
 		}
 
-	if (s1[x+1] == '\0'){
-		if((x-i) == 1){
-			return s1;
+		if (s1[x+1] == '\0'){
+
+			if((x-i) == 1){
+				return ;
+			}
 			c = c/2;
 			x = c;
 			i = 0;
@@ -188,4 +197,72 @@ void TRPDelete(tTabulka *tab){
 		x++;
 		i++;
 	}
-}*/
+	return ;
+}
+
+int boyer_moore (char *s, char *search){
+	int i = 0;
+	int delka, delka2;
+	int pom; // pomocná proměnná
+	int akt; // aktualní pozice v řetezci s
+
+	delka = strlen(search) - 1; // delka retezce search o jednu menší
+	delka2 = strlen(s) - 1; // delka retezce s o jednu menší
+	pom = delka;
+	i = delka;
+	akt = delka;
+
+	while(1){
+		if (akt > delka2){
+			return -1;
+		}
+		i = delka;
+		pom = akt;
+		if(s[akt] == search[delka]){
+			do{
+				if((i-1) < 0){
+						return pom;
+				}
+				if (s[pom-1] == search[i-1]){ // porovnávání znaků 
+						i--;
+						pom--;
+				}
+				else{
+					i--;
+					while(i >= 0){
+				 		if (s[pom] == search[i]){ // V řetezci search vyhledáváme schodný znak se znakem na pozici s[pom]
+								akt = akt + delka - i; //zmenime aktualni pozici na retezci s
+								pom = akt;
+								i = akt;
+								break;
+							}
+						else{
+							i--;
+						}	
+					}
+					if(i == -1){
+						akt = akt + delka - i; //zmenime aktualni pozici na retezci s
+					}	
+					i = -2;
+				}
+			}while(i != -2);
+		}
+		else{
+			i--;
+			while(i >= 0){
+				if (s[akt] == search[i]){ // V řetezci search vyhledáváme schodný znak se znakem na pozici s[akt]
+					akt = akt + delka - i; //zmenime aktualni pozici na retezci s
+					i = akt;
+					break;
+				}
+				else{
+					i--;
+				}
+			}
+			if(i == -1){
+			akt = akt + delka - i; //zmenime aktualni pozici na retezci s
+			}	
+		}
+
+	}
+}

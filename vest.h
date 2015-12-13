@@ -13,14 +13,24 @@
  *
  */
 
-#ifndef RANDOM_H_HLAVICKA
-#define RANDOM_H_HLAVICKA
+#ifndef VEST_H_FUNKCE
+#define VEST_H_FUNKCE
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "alokator.h"
+#include "scaner.h"
+#include "data.h"
+#include "vyrazy.h"
+#include "ial.h"
 
-char* generateVar();
+tError vest(int i);
 
-#endif /* RANDOM_H_HLAVICKA */
+char *concatVest(char *s1, char *s2);
+int lengthVest(char *s);
+char *sortVest(char *s1);
+char *substrVest(char *s1, int i1, int i2);
+
+#endif /* VEST_H_FUNKCE */
